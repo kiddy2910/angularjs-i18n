@@ -1,0 +1,25 @@
+{
+  "name": "angularjs-i18n",
+  "version": "1.0.0",
+  "description": "i18n service, filter and directive for localizing applications written by AngularJS Framework",
+  "main": "lib/i18n.js",
+  "keywords": [
+    "i18n",
+    "localize",
+    "angularjs-i18n",
+    "angularjs-localize",
+    "kiddy2910",
+    "dangduy2910@gmail.com"
+  ],
+  "authors": [
+    "kiddy2910 <dangduy2910@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/kiddy2910/angularjs-i18n.git",
+  "ignore": [
+    "*",
+    "!demo/**",
+    "!angularjs-i18n.js",
+    "!angularjs-i18n-adapter.js"
+  ]
+}
