@@ -12,9 +12,9 @@ angular.module("angularApp", ["i18n.adapter", "module1", "i18n"])
             age: 20
         };
 
-        i18n("greetings.hello", {order: $scope.order, name: $scope.person.name, age: $scope.person.age}, $scope, "msg");
+        i18n("greetings.bye", {order: $scope.order, name: $scope.person.name, age: $scope.person.age}, $scope, "msg");
 
-        $scope.switch = function() {
+        $scope.swt = function() {
             if($scope.lang === "en") {
                 $scope.lang = "vi";
             } else {

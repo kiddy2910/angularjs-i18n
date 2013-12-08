@@ -7,6 +7,7 @@ What can it do?
 * Auto generate HTML attributes (such as *placeholder* attribute).
 * Switch language on the fly.
 * **Support partial message files.** You can import many message files for a language.
+* **Allow a message refers to other messages.**
 
 Install
 ===
@@ -91,7 +92,7 @@ Advanced
 
 Tips: listen on `$destroy` event of `$scope` to call `clearModule()`
 
-`angularjs-i18n-adapter.js`
+#### `angularjs-i18n-adapter.js` ####
 ---
 * After inject `i18n.adapter`, it registers a `config` phase to add message services.
 * You should inject all messages services in here.
@@ -115,6 +116,19 @@ Example:
     i18nProvider.add("vi", "m1.vi", ["m1-vi"]);
     
 we declare two languages `en` and `vi`. `en` has two modules `common.en` and `m2.en`. `vi` has two modules `common.vi` and `m1.vi`. Module `common.en` has a message service `common-en`, modules `m2.en`, `common.vi` and `m1.vi` are similar to `common.en`.
+
+#### Message refers other messages ####
+---
+To refer other messages, add `&` sign to first character of messages need to refer.
+
+Example:
+
+    greetings: {
+      hello: "Hello {{name}}, your age is {{age}}",
+      bonjour: "&greetings.hello"
+    }
+
+`greetings.bonjour` is referred value to `greetings.hello`, then `greetings.bonjour` is **Hello {{name}}, your age is {{age}}**.
 
 License
 ===

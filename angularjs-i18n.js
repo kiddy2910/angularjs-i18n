@@ -1,5 +1,5 @@
 /**
- * angularjs-i18n v1.0.0 (2013-12-07)
+ * angularjs-i18n v1.0.0 (2013-12-08)
  *
  * Author: kiddy2910 <dangduy2910@gmail.com>
  * https://github.com/kiddy2910/angularjs-i18n.git
@@ -26,32 +26,18 @@ angular.module("i18n", ["i18n.localeContainer"])
         var pendingQueue = [];
         var currentLanguage, browserLanguage;
 
-        function getI18nMessage(messageCode) {
-            var dotToken = ".";
-            var namespaces = messageCode.split(dotToken);
-            var messageObject = null;
-
-            for(var i=0; i<namespaces.length; i++) {
-                if(i === 0) {
-                    messageObject = i18nLocaleContainerProvider.find(currentLanguage, namespaces[0], null);
-                } else {
-                    messageObject = messageObject[namespaces[i]];
-                }
-
-                if(messageObject == null) {
-                    return messageCode;
-                }
-            }
-
-            if(messageObject instanceof Object) {
-                return messageCode;
-            } else {
-                return messageObject;
-            }
-        }
-
+        /**
+         * Replace parameters with values.
+         *
+         * @param messageCode
+         * @param parameters:
+         *          Object if isAnonymous is null or false.
+         *          Array if isAnonymous is true.
+         * @param isAnonymous: indicates parameters is object or array.
+         * @returns message is replaced with parameters.
+         */
         function interpolateMessage(messageCode, parameters, isAnonymous) {
-            var msg = getI18nMessage(messageCode);
+            var msg = i18nLocaleContainerProvider.find(currentLanguage, messageCode);
             var startIndex, endIndex, index = 0,
                 length = msg.length, parts = [],
                 tokenStart = "{{", tokenEnd = "}}",
@@ -393,6 +379,150 @@ angular.module("i18n.localeContainer", [])
             return angular.injector([module]).get(require);
         }
 
+        /**
+         * Get message object in message services. Priority for require last added.
+         *
+         * @param language
+         * @param messageNamespace: name of message object
+         * @returns message object or null.
+         */
+        function getMessageObject(language, messageNamespace) {
+            var locale, module, iterationModule, iterationRequire, message, i, k;
+
+            locale = getLocaleByLanguage(language);
+            if(locale == null) {
+                throw "There is no locale [" + language + "]. Please declare before to use.";
+            }
+
+            if(fixedLanguage === language && fixedModuleName != null) {
+                // if module is passed, only find in this module
+                module = getModuleByName(locale, fixedModuleName);
+                if(module == null) {
+                    throw "Module [" + fixedModuleName + "] doesn't exist.";
+                }
+
+                // iterate requires
+                for(k=module.requires.length - 1; k>=0; k--) {
+                    iterationRequire = module.requires[k];
+
+                    message = iterationRequire.provider[messageNamespace];
+                    if(message != null) {
+                        return message;
+                    }
+                }
+            } else {
+                // iterate modules
+                for(i=locale.modules.length - 1; i>=0; i--) {
+                    iterationModule = locale.modules[i];
+
+                    // iterate requires
+                    for(k=iterationModule.requires.length - 1; k>=0; k--) {
+                        iterationRequire = iterationModule.requires[k];
+
+                        message = iterationRequire.provider[messageNamespace];
+                        if(message != null) {
+                            return message;
+                        }
+                    }
+                }
+            }
+            return null;
+        }
+
+        /**
+         * Get message string by language and message code.
+         * Support to reuse parameter by (&) sign.
+         *
+         * @param language
+         * @param messageCode: message code need to find.
+         * @returns message string or message code if not exist or not string.
+         */
+        function extractMessageCode(language, messageCode) {
+            var dotToken = ".", message = null;
+            var namespaces = messageCode.split(dotToken);
+
+            for(var i=0; i<namespaces.length; i++) {
+                if(i === 0) {
+                    // get message object from the first namespace
+                    message = getMessageObject(language, namespaces[0]);
+                } else {
+                    // refer to children properties of message object
+                    message = message[namespaces[i]];
+                }
+
+                if(message == null) {
+                    return messageCode;
+                }
+            }
+
+            if(message instanceof Object) {
+                return messageCode;
+            } else {
+                return extractReference(language, message);
+            }
+        }
+
+        /**
+         * Get message by referring to other message by (&) sign.
+         *
+         * @param language
+         * @param message
+         * @returns message
+         */
+        function extractReference(language, message) {
+            var referToken = "&", spaceToken = " ";
+            var referIndex, spaceIndex, index = 0, length = message.length;
+            var parts = [], part, temp;
+
+            // split by reference token and space token
+            while(index < length) {
+                if ((referIndex = message.indexOf(referToken, index)) >= 0) {
+                    // part without reference
+                    if(referIndex !== index) {
+                        parts.push(message.substring(index, referIndex));
+                    }
+
+                    // part from reference position to space
+                    if((spaceIndex = message.indexOf(spaceToken, referIndex)) >= 0) {
+                        parts.push(message.substring(referIndex, spaceIndex));
+                        index = spaceIndex;
+                    } else {
+                        // without any space, add remain string
+                        parts.push(message.substring(referIndex));
+                        index = length;
+                    }
+                } else {
+                    // string without any reference token
+                    if(index !== length) {
+                        parts.push(message.substring(index));
+                    }
+                    index = length;
+                }
+            }
+
+            // refer to other message object if parts has reference token
+            for(var i=0; i<parts.length; i++) {
+                part = parts[i];
+
+                // if part start with reference token and not only (&) sign
+                if(part.indexOf(referToken) === 0 && part.length > 1) {
+                    part = part.replace(referToken, "");
+
+                    // refer to other message
+                    temp = extractMessageCode(language, part);
+
+                    // if refer failed, output message code
+                    parts[i] = (temp === part ? referToken + temp : temp);
+                }
+            }
+            // join parts
+            return parts.join('');
+        }
+
+        function trim(str) {
+            return str.replace(/^\s+|\s+$/g, "");
+        }
+
         return {
 
             /**
@@ -434,55 +564,15 @@ angular.module("i18n.localeContainer", [])
             },
 
             /**
-             * Get message object in message services. Priority for require last added.
+             * Get message string by language and message code.
+             * Support to reuse parameter by (&) sign.
              *
              * @param language
-             * @param messageCode: name of message object.
-             * @param moduleName: module contains message services.
-             * @returns message object or null.
+             * @param messageCode: message code need to find.
+             * @returns message string or message code if not exist or not string.
              */
             find: function(language, messageCode) {
-                var locale, module, iterationModule, iterationRequire, message, i, k;
-
-                locale = getLocaleByLanguage(language);
-                if(locale == null) {
-                    throw "There is no locale [" + language + "]. Please declare before to use.";
-                }
-
-                if(fixedLanguage === language && fixedModuleName != null) {
-                    // if module is passed, only find in this module
-                    module = getModuleByName(locale, fixedModuleName);
-                    if(module == null) {
-                        throw "Module [" + fixedModuleName + "] doesn't exist.";
-                    }
-
-                    // iterate requires
-                    for(k=module.requires.length - 1; k>=0; k--) {
-                        iterationRequire = module.requires[k];
-
-                        message = iterationRequire.provider[messageCode];
-                        if(message != null) {
-                            return message;
-                        }
-                    }
-                } else {
-                    // iterate modules
-                    for(i=locale.modules.length - 1; i>=0; i--) {
-                        iterationModule = locale.modules[i];
-
-                        // iterate requires
-                        for(k=iterationModule.requires.length - 1; k>=0; k--) {
-                            iterationRequire = iterationModule.requires[k];
-
-                            message = iterationRequire.provider[messageCode];
-                            if(message != null) {
-                                return message;
-                            }
-                        }
-                    }
-                }
-
-                return null;
+                return extractMessageCode(language, messageCode);
             },
 
             $get: function($window) {
