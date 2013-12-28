@@ -1,7 +1,7 @@
 angular.module("angularApp", ["i18n.adapter", "module1", "i18n"])
     .config(function(i18nProvider) {
         // set place to find message
-        i18nProvider.setModule("en", "common.en");
+        i18nProvider.setPreferredMessages("en", [ "m2-en" ]);
     })
 
     .controller("MainController", function($scope, i18n) {

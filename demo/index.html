@@ -4,8 +4,8 @@
 <head>
     <meta http-equiv="X-UA-Compatible" content="IE=8">
     <meta charset="utf-8">
-    <script src="http://code.jquery.com/jquery-1.10.2.min.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.4/angular.js"></script>
+    <script src="libs/jquery-1.10.2.js"></script>
+    <script src="libs/angular.js"></script>
 
     <script src="messages/common/en.js"></script>
     <script src="messages/common/vi.js"></script>
@@ -16,8 +16,8 @@
     <script src="messages/m2/en.js"></script>
     <script src="messages/m2/vi.js"></script>
 
-    <script src="../angularjs-i18n.js"></script>
-    <script src="../angularjs-i18n-adapter.js"></script>
+    <script src="../hoiio-i18n.js"></script>
+    <script src="../hoiio-i18n-adapter.js"></script>
     <script src="script1.js"></script>
     <script src="script.js"></script>
 </head>
@@ -43,11 +43,11 @@
     <div ng-controller="ModuleController">
         <hr style="width: 100%"/>
         <h3 style="text-align: center">Module 2 Controller</h3>
-        Language: {{lang}}<br/>
+        Language: {{moduleLanguage}}<br/>
         {{'greetings.hello' | i18n : order : person.name : person.age}}<br/>
-        <i18n code="greetings.hello" params="{order: order, name: person.name, age: person.age}"></i18n><br/>
-        <span i18n code="greetings.hello" params="{order: order, name: person.name, age: 'person.age'}"></span><br/>
-        <input style="width: 100%" i18n code="greetings.hello" params="{order: order, name: person.name, age: 100}" attr="placeholder"><br/>
+        <i18n code="greetings.hello" params="{order: order, name: mp.name, age: mp.age}"></i18n><br/>
+        <span i18n code="greetings.hello" params="{order: order, name: mp.name, age: 'mp.age'}"></span><br/>
+        <input style="width: 100%" i18n code="greetings.hello" params="{order: order, name: mp.name, age: 100}" attr="placeholder"><br/>
         {{msg}}<br/>
         <br/>
         <button ng-click="swt()">Switch language</button>

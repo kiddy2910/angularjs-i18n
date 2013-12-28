@@ -1,3 +1,13 @@
+/**
+ * hoiio-i18n v1.0.0 (2013-12-28)
+ *
+ * Author: kiddy2910 <dangduy2910@gmail.com>
+ * https://github.com/kiddy2910/angularjs-i18n.git
+ *
+ * Copyright (c) 2013 
+ */
+(function ( window, angular, undefined ) {
+
 angular.module('i18n', ['i18n.localeContainer'])
 
     .constant('i18nConstants', {
@@ -633,3 +643,5 @@ angular.module('i18n.localeContainer', [])
             }
         };
     });
+
+})( window, window.angular );
