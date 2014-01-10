@@ -9,11 +9,11 @@
     <script src="https://netdna.bootstrapcdn.com/bootstrap/3.0.3/js/bootstrap.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.4/angular.min.js"></script>
 
-    <script src="messages/en/en1.js"></script>
-    <script src="messages/en/en2.js"></script>
+    <script src="messages/en/syntax.js"></script>
+    <script src="messages/en/msg.js"></script>
 
-    <script src="messages/vi/vi1.js"></script>
-    <script src="messages/vi/vi2.js"></script>
+    <script src="messages/vi/syntax.js"></script>
+    <script src="messages/vi/msg.js"></script>
 
     <script src="../hoiio-i18n.js"></script>
     <script src="../hoiio-i18n-adapter.js"></script>
@@ -21,28 +21,57 @@
 </head>
 
 <body style="margin: 15px">
+
     <div ng-controller="MainController">
         <table class="table table-bordered">
+            <thead>
             <tr>
-                <td>Language</td>
-                <td>Filter</td>
-                <td>Directive (Element)</td>
-                <td>Directive (Attribute)</td>
-                <td>Directive (With custom HTML Attribute)</td>
-                <td>Service</td>
+                <th>Use as (lang: {{ currentLanguage }})</th>
+                <th>Code</th>
+                <th>Result</th>
             </tr>
+            </thead>
 
+            <tbody>
             <tr>
-                <td>{{lang}}</td>
-                <td>{{'greetings.hello' | i18n  : person.name : order : person.age}}</td>
-                <td><i18n code="greetings.hello" params="{order: order, name: person.name, age: person.age}"></i18n></td>
-                <td><span i18n code="greetings.hello" params="{order: order, name: person.name, age: 'person.age'}"></span></td>
-                <td><input i18n code="greetings.hello" params="{order: order, name: person.name, age: 100}" attr="placeholder" class="form-control"></td>
-                <td>{{msg}}</td>
+                <td>Filter</td>
+                <td i18n code="syntax.filter"></td>
+                <td>{{'message.basic' | i18n  : 2014 : bindingValue : '!~~'}}</td>
             </tr>
+            <tr>
+                <td>Directive (Element)</td>
+                <td i18n code="syntax.directive.element"></td>
+                <td><i18n code="message.basic" params="{literalNumber: 2014, bindingValue: bindingValue, literalString: '!~~'}"></i18n></td>
+            </tr>
+            <tr>
+                <td>Directive (Attribute)</td>
+                <td i18n code="syntax.directive.attr"></td>
+                <td i18n code="message.basic" params="{literalNumber: 2014, bindingValue: bindingValue, literalString: '!~~'}"></td>
+            </tr>
+            <tr>
+                <td>Directive (Custom HTML Attribute) by <b>attr</b> property</td>
+                <td i18n code="syntax.directive.custom"></td>
+                <td><input i18n code="message.basic" params="{literalNumber: 2014, bindingValue: bindingValue, literalString: '!~~'}" attr="placeholder" class="form-control"></td>
+            </tr>
+            <tr>
+                <td>Service</td>
+                <td i18n code="syntax.service.normal"></td>
+                <td ng-bind="parsedMsg"></td>
+            </tr>
+            <tr>
+                <td>Service (Observed)</td>
+                <td i18n code="syntax.service.observe"></td>
+                <td ng-bind="observedMsg"></td>
+            </tr>
+            <tr>
+                <td>Refer other messages by <b>&</b> token</td>
+                <td i18n code="syntax.refer"></td>
+                <td i18n code="message.refer" params="{literalNumber: 2014, bindingValue: bindingValue, literalString: '!~~'}" raw="true"></td>
+            </tr>
+            </tbody>
         </table>
 
-        <button ng-click="switch()" class="btn btn-primary">Switch To Language</button>
+        <button ng-click="switchLanguage()" class="btn btn-primary">Switch To Language</button>
     </div>
 </body>
 

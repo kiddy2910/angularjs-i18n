@@ -1,25 +1,22 @@
-angular.module("angularApp", ["i18n.adapter", "i18n"])
+angular.module('angularApp', ['i18n.adapter', 'i18n'])
 
     .config(function(i18nProvider) {
-        i18nProvider.setLanguage('vi');
+        i18nProvider.setLanguage('en');
+        i18nProvider.setDebugMode(true);
     })
 
-    .controller("MainController", function($scope, i18n) {
-        $scope.lang = i18n.getCurrentLanguage();
-        $scope.order = 1;
-        $scope.person = {
-            name: "Kiddy",
-            age: 20
-        };
+    .controller('MainController', function($scope, i18n) {
+        $scope.currentLanguage = i18n.getCurrentLanguage();
+        $scope.bindingValue = '!~~';
+        $scope.parsedMsg = i18n('message.unobserved', {literalNumber: 2014, bindingValue: $scope.bindingValue, literalString: '!~~'});
+        i18n('message.basic', {literalNumber: 2014, bindingValue: $scope.bindingValue, literalString: '!~~'}, $scope, 'observedMsg');
 
-        i18n("greetings1.bye", {order: $scope.order, name: $scope.person.name, age: $scope.person.age}, $scope, "msg");
-
-        $scope.switch = function() {
-            if($scope.lang === "en") {
-                $scope.lang = "vi";
+        $scope.switchLanguage = function() {
+            if($scope.currentLanguage === 'en') {
+                $scope.currentLanguage = 'vi';
             } else {
-                $scope.lang = "en";
+                $scope.currentLanguage = 'en';
             }
-            i18n.switchToLanguage($scope.lang);
+            i18n.switchToLanguage($scope.currentLanguage);
         };
     });

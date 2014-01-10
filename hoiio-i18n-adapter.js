@@ -1,18 +1,23 @@
-angular.module('i18n.adapter', ['i18n', 'en.1', 'en.2', 'vi.1', 'vi.2'])
+angular.module('i18n.adapter', ['i18n',
+        'en.syntax', 'en.msg',
+        'vi.syntax', 'vi.msg'])
 
     .config(function(i18nProvider) {
-        i18nProvider.add('en', ['en1', 'en2']);
+        i18nProvider.add('en', ['EN_SYNTAX', 'EN_MSG']);
 
-        i18nProvider.add('vi', ['vi1']);
-        i18nProvider.add('vi', ['vi2']);
+        // many times for a language
+        i18nProvider.add('vi', ['VI_SYNTAX']);
+        i18nProvider.add('vi', ['VI_MSG']);
     });
 
 /**
  * Template for message services
  */
-angular.module('template.en', [])
-    .value('template-en', {
-        greetings: {
-            hello: '[Common][en] {{order}} - {{name}}[{{age}}]'
+angular.module('tpl.en', [])
+
+    .value('EN_TPL', {
+        intro: {
+            parameter: 'Use token {{ paramName }}',
+            refer: 'Use token &'
         }
     });

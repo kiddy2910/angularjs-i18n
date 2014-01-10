@@ -1,14 +1,19 @@
 /**
- * hoiio-i18n v1.1.1 (2014-01-10)
+ * hoiio-i18n v1.2.0 (2014-01-10)
  *
  * Author: kiddy2910 <dangduy2910@gmail.com>
  * https://github.com/kiddy2910/angularjs-i18n.git
  *
  * Copyright (c) 2014 
  */
-angular.module('i18n', ['i18n.localeContainer']).constant('i18nConstants', { EVENT_LANGUAGE_CHANGED: 'switchLanguageSuccess' }).provider('i18n', [
+angular.module('i18n', [
+  '#i18n.constants',
+  '#i18n.localeContainer',
+  '#i18n.logUtil'
+]).provider('i18n', [
   'i18nLocaleContainerProvider',
-  function (i18nLocaleContainerProvider) {
+  'i18nLogUtilProvider',
+  function (i18nLocaleContainerProvider, i18nLogUtilProvider) {
     var pendingQueue = [];
     var currentLanguage, browserLanguage;
     return {
@@ -18,14 +23,18 @@ angular.module('i18n', ['i18n.localeContainer']).constant('i18nConstants', { EVE
       setLanguage: function (language) {
         currentLanguage = language;
       },
+      setDebugMode: function (trueOrFalse) {
+        i18nLogUtilProvider.setDebugMode(trueOrFalse);
+      },
       $get: [
         '$rootScope',
+        '$sce',
         'i18nLocaleContainer',
         'i18nConstants',
-        function ($rootScope, i18nLocaleContainer, i18nConstants) {
+        function ($rootScope, $sce, i18nLocaleContainer, i18nConstants) {
           function interpolateMessage(messageCode, parameters, isAnonymous) {
             var msg = i18nLocaleContainer.find(currentLanguage, messageCode);
-            var startIndex, endIndex, index = 0, length = msg.length, parts = [], tokenStart = '{{', tokenEnd = '}}', tokenStartLength = tokenStart.length, tokenEndLength = tokenEnd.length, paramIndex = 0, paramName = '', paramNameWithToken = '';
+            var startIndex, endIndex, index = 0, length = msg.length, parts = [], tokenStart = i18nConstants.PARAMETER_TOKEN.START, tokenEnd = i18nConstants.PARAMETER_TOKEN.END, tokenStartLength = tokenStart.length, tokenEndLength = tokenEnd.length, paramIndex = 0, paramName = '', paramNameWithToken = '';
             if (parameters == null || parameters.length < 1) {
               return msg;
             }
@@ -175,7 +184,11 @@ angular.module('i18n', ['i18n.localeContainer']).constant('i18nConstants', { EVE
       if (scope.attr != null) {
         element.attr(scope.attr, msg);
       } else {
-        element.text(msg);
+        if (scope.raw) {
+          element.html(msg);
+        } else {
+          element.text(msg);
+        }
       }
     }
     return {
@@ -183,7 +196,8 @@ angular.module('i18n', ['i18n.localeContainer']).constant('i18nConstants', { EVE
       scope: {
         code: '@',
         params: '@',
-        attr: '@'
+        attr: '@',
+        raw: '@'
       },
       link: function (scope, element) {
         scope.$on(i18nConstants.EVENT_LANGUAGE_CHANGED, function () {
@@ -194,7 +208,19 @@ angular.module('i18n', ['i18n.localeContainer']).constant('i18nConstants', { EVE
     };
   }
 ]);
-angular.module('i18n.localeContainer', []).provider('i18nLocaleContainer', function () {
+angular.module('#i18n.constants', []).constant('i18nConstants', {
+  EVENT_LANGUAGE_CHANGED: 'switchLanguageSuccess',
+  MESSAGE_CACHE: 'i18nMsgRepo',
+  REUSE_PARAMETER_TOKEN: '&',
+  PARAMETER_TOKEN: {
+    START: '{{',
+    END: '}}'
+  }
+});
+angular.module('#i18n.localeContainer', [
+  '#i18n.constants',
+  '#i18n.logUtil'
+]).provider('i18nLocaleContainer', function () {
   var i18nLocaleContainer = [];
   function getLocaleByLanguage(language) {
     for (var i = 0; i < i18nLocaleContainer.length; i++) {
@@ -244,7 +270,10 @@ angular.module('i18n.localeContainer', []).provider('i18nLocaleContainer', funct
     $get: [
       '$window',
       '$injector',
-      function ($window, $injector) {
+      '$cacheFactory',
+      'i18nLogUtil',
+      'i18nConstants',
+      function ($window, $injector, $cacheFactory, i18nLogUtil, i18nConstants) {
         function initMessageProvider(requireName) {
           if ($injector.has(requireName)) {
             return $injector.get(requireName);
@@ -270,8 +299,7 @@ angular.module('i18n.localeContainer', []).provider('i18nLocaleContainer', funct
           return null;
         }
         function extractMessageCode(language, messageCode) {
-          var dotToken = '.', message = null;
-          var namespaces = messageCode.split(dotToken);
+          var dotToken = '.', message = null, namespaces = messageCode.split(dotToken);
           for (var i = 0; i < namespaces.length; i++) {
             if (i === 0) {
               message = getMessageObject(language, namespaces[0]);
@@ -289,7 +317,7 @@ angular.module('i18n.localeContainer', []).provider('i18nLocaleContainer', funct
           }
         }
         function extractReference(language, message) {
-          var referToken = '&', spaceToken = ' ';
+          var referToken = i18nConstants.REUSE_PARAMETER_TOKEN, spaceToken = ' ';
           var referIndex, spaceIndex, index = 0, length = message.length;
           var parts = [], part, temp;
           var counterForBreakingLoop = 0;
@@ -326,9 +354,30 @@ angular.module('i18n.localeContainer', []).provider('i18nLocaleContainer', funct
           }
           return parts.join('');
         }
+        function getMessageFromCache(language, messageCode) {
+          var cache = $cacheFactory.get(i18nConstants.MESSAGE_CACHE + language);
+          return cache == null ? null : cache.get(messageCode);
+        }
+        function storeInCache(language, messageCode, message) {
+          var cache = $cacheFactory.get(i18nConstants.MESSAGE_CACHE + language);
+          if (cache == null) {
+            cache = $cacheFactory(i18nConstants.MESSAGE_CACHE + language);
+          }
+          cache.put(messageCode, message);
+        }
         var localeFactory = {
             find: function (language, messageCode) {
-              return extractMessageCode(language, messageCode);
+              i18nLogUtil.debug('Get cache$' + language + '#' + messageCode);
+              var msg = getMessageFromCache(language, messageCode);
+              if (msg == null) {
+                i18nLogUtil.debug('-- Cannot found cache$' + language + '#' + messageCode);
+                msg = extractMessageCode(language, messageCode);
+                if (msg !== messageCode) {
+                  i18nLogUtil.debug('---- Store cache$' + language + '#' + messageCode + ' with value#' + msg);
+                  storeInCache(language, messageCode, msg);
+                }
+              }
+              return msg;
             },
             getBrowserLanguage: function () {
               var browserLanguage, androidLanguage;
@@ -344,6 +393,51 @@ angular.module('i18n.localeContainer', []).provider('i18nLocaleContainer', funct
             }
           };
         return localeFactory;
+      }
+    ]
+  };
+});
+angular.module('#i18n.logUtil', []).provider('i18nLogUtil', function () {
+  var isDebug = false;
+  var mode = {
+      DEBUG: 'DEBUG',
+      ERROR: 'ERROR',
+      WARNING: 'WARNING'
+    };
+  return {
+    setDebugMode: function (trueOrFalse) {
+      isDebug = trueOrFalse === true;
+    },
+    $get: [
+      '$log',
+      function ($log) {
+        function log(debugMode, msg) {
+          if (!isDebug) {
+            return;
+          }
+          switch (debugMode) {
+          case mode.DEBUG:
+            $log.debug(msg);
+            break;
+          case mode.ERROR:
+            $log.error(msg);
+            break;
+          case mode.WARNING:
+            $log.warn(msg);
+            break;
+          }
+        }
+        return {
+          debug: function (msg) {
+            log(mode.DEBUG, msg);
+          },
+          error: function (msg) {
+            log(mode.ERROR, msg);
+          },
+          warning: function (msg) {
+            log(mode.WARNING, msg);
+          }
+        };
       }
     ]
   };
