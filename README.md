@@ -8,6 +8,7 @@ What can it do?
 * Switch language on the fly.
 * **Support partial message files.** You can import many message files for a language.
 * **Allow a message refers to other messages.**
+* **Use cache for decreasing message translation time** (v1.2.0 or later).
 
 Install
 ===
