@@ -1,15 +1,15 @@
 
 module.exports = {
-    build_dir: '.',
+    build_dir: 'build',
     compile_dir: 'bin',
 
     src_files: {
-        js: "lib/i18n.js"
+        js: [ 'lib/i18n.js' ],
+
+        less: []
     },
 
-    adapter_file: "lib/i18n-adapter.js",
-
-    css_files: {
-        less: ""
+    external_files: {
+        js: [ 'lib/i18n-adapter.js' ]
     }
 };

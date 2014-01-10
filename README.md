@@ -89,7 +89,7 @@ Example:
         }
     });
 
-`greetings`, `name1` are *namespace* of message service.
+`greetings`, `name1` are *namespaces* of message service.
 
 Basic use:
 
