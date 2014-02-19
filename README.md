@@ -9,6 +9,7 @@ What can it do?
 * **Support partial message files.** You can import many message files for a language.
 * **Allow a message refers to other messages.**
 * **Use cache for decreasing message translation time** (v1.2.0 or later).
+* **Render message as HTML** (v1.2.0 or later).
 
 Install
 ===
@@ -23,7 +24,8 @@ How to use
 Assume message service as:
 
     greetings: {
-      hello: "Hello {{name}}, your age is {{age}}"
+      hello: "Hello {{name}}, your age is {{age}}",
+      hello_with_html_tags: "<b>Hello</b>, this message has HTML tags"
     }
     
 
@@ -57,6 +59,15 @@ Example:
     <input i18n code="greetings.hello" params="{name: name, age: '20'}" attr="placeholder">
     
 `name` parameter will be mapped with property `name` of `scope`, `'20'` is literal string. **input** html tag will be added `placeholder` attribute with value is parsed message `greetings.hello`.
+
+* Render as HTML tags:
+
+If your message has HTML tags, you can render as HTML with property `raw="true"`, default it's false.
+
+Example:
+
+    <input i18n code="greetings.hello_with_html_tags" params="{name: name, age: '20'}" raw="true">
+
 
 #### With `i18n` service ####
 ---
