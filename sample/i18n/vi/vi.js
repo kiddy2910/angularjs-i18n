@@ -1,0 +1,1 @@
+angular.module('myApp.i18n.vi', [ 'myApp.i18n.sample.vi' ]);

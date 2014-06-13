@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html ng-app="myApp">
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.14/angular.min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+    <script src="i18n/en/sample.en.js"></script>
+    <script src="i18n/en/en.js"></script>
+    <script src="i18n/vi/sample.vi.js"></script>
+    <script src="i18n/vi/vi.js"></script>
+    <script src="../hoiio-i18n.js"></script>
+    <script src="app.js"></script>
+    <title>angularjs-i18n</title>
+</head>
+<body ng-controller="MainController">
+    <div>
+        Literal String: <span i18n code="sample.literalString"></span>
+    </div>
+
+    <div>
+        Declare parameters by enclosing in double bracket <b>{{</b> and <b>}}</b>:
+        <span i18n code="sample.withParameters" params="{ name: data.user.name }"></span>
+    </div>
+
+    <div>
+        Refer message from other code by adding the prefix <b>&</b>
+        <span i18n code="sample.referOtherCode" params="{ name: data.user.name }"></span>
+    </div>
+
+    <button ng-click="switchLanguage()" type="button">Switch to <span ng-bind="data.lang"></span></button>
+</body>
+</html>
