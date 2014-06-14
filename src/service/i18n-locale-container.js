@@ -234,7 +234,7 @@ angular.module('duytran.i18n.localeContainer', [])
                     cache.put(messageCode, message);
                 }
 
-                var localeFactory = {
+                return {
 
                     /**
                      * Get message string by language and message code.
@@ -285,8 +285,6 @@ angular.module('duytran.i18n.localeContainer', [])
                         return browserLanguage;
                     }
                 };
-
-                return localeFactory;
             }
         };
     });

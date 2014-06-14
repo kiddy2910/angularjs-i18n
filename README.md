@@ -74,8 +74,7 @@ Example:
 1. Declare supported languages and message services in `config` phase of module.
 2. Translate message. That's all.
 
-Declare supported languages:
-`i18nProvider.add(language, [ messageServices ]);`
+Declare supported languages: `i18nProvider.add(language, [ messageServices ]);`
 
     .config(function(i18nProvider) {
         // declare two message services for en language
@@ -109,19 +108,15 @@ Basic use:
     
 Example:
 
-    $scope.msg = i18n("greetings.hello", { name: "Kiddy", age: 20 });
+    $scope.msg = i18n('greetings.hello', { name: 'Duy Tran', age: 20 });
 
-If want to watch on property when switch language, use:
-
-    i18n(messageCode, parameters, observer, observerAttribute);
-    
-so `observerAttribute` property of `observer` will be updated every time switch language.
+If want to watch on property when switch language, listen on event `i18n:languageChanged`.
 
 Example:
 
-    i18n("greetings.hello", { name: "Kiddy", age: 20 }, $scope, "msg");
-
-`msg` property of `$scope` is auto-updated every switch language.
+    $scope.$on('i18n:languageChanged', function() { 
+        $scope.msg = i18n('greetings.hello', { name: 'Duy Tran' }); 
+    });
 
 Advanced
 ===
@@ -143,7 +138,7 @@ License
 ===
 The MIT License (MIT)
 
-Copyright (c) 2013 Béo Bụ Bẫm
+Copyright (c) 2013 Duy Tran
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

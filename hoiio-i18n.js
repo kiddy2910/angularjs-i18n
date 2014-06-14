@@ -7,8 +7,8 @@
  * Copyright (c) 2014 
  */
 angular.module('duytran.i18n.constants', []).constant('i18nConstants', {
-  EVENT_LANGUAGE_CHANGED: 'switchLanguageSuccess',
-  MESSAGE_CACHE: 'i18nMsgRepo',
+  EVENT_LANGUAGE_CHANGED: 'i18n:languageChanged',
+  MESSAGE_CACHE: 'i18n:dictionary',
   REUSE_PARAMETER_TOKEN: '&',
   PARAMETER_TOKEN: {
     START: '{{',
@@ -218,38 +218,37 @@ angular.module('duytran.i18n.localeContainer', []).provider('i18nLocaleContainer
           }
           cache.put(messageCode, message);
         }
-        var localeFactory = {
-            find: function (language, messageCode) {
-              i18nLogUtil.debug('Get cache$' + language + '#' + messageCode);
-              var msg = getMessageFromCache(language, messageCode);
-              if (msg == null) {
-                i18nLogUtil.debug('-- Cannot found cache$' + language + '#' + messageCode);
-                msg = extractMessageCode(language, messageCode);
-                if (msg !== messageCode) {
-                  // have matched message, set cache
-                  i18nLogUtil.debug('---- Store cache$' + language + '#' + messageCode + ' with value#' + msg);
-                  storeInCache(language, messageCode, msg);
-                }
+        return {
+          find: function (language, messageCode) {
+            i18nLogUtil.debug('Get cache$' + language + '#' + messageCode);
+            var msg = getMessageFromCache(language, messageCode);
+            if (msg == null) {
+              i18nLogUtil.debug('-- Cannot found cache$' + language + '#' + messageCode);
+              msg = extractMessageCode(language, messageCode);
+              if (msg !== messageCode) {
+                // have matched message, set cache
+                i18nLogUtil.debug('---- Store cache$' + language + '#' + messageCode + ' with value#' + msg);
+                storeInCache(language, messageCode, msg);
               }
-              return msg;
-            },
-            getBrowserLanguage: function () {
-              var browserLanguage, androidLanguage;
-              if ($window.navigator && $window.navigator.userAgent && (androidLanguage = $window.navigator.userAgent.match(/android.*\W(\w\w)-(\w\w)\W/i))) {
-                // works for earlier version of Android (2.3.x)
-                browserLanguage = androidLanguage[1];
-              } else {
-                // works for iOS, Android 4.x and other devices
-                browserLanguage = $window.navigator.userLanguage || $window.navigator.language;
-              }
-              // only get characters before dash sign
-              if (browserLanguage != null && browserLanguage.indexOf('-') >= 0) {
-                browserLanguage = browserLanguage.substring(0, browserLanguage.indexOf('-'));
-              }
-              return browserLanguage;
             }
-          };
-        return localeFactory;
+            return msg;
+          },
+          getBrowserLanguage: function () {
+            var browserLanguage, androidLanguage;
+            if ($window.navigator && $window.navigator.userAgent && (androidLanguage = $window.navigator.userAgent.match(/android.*\W(\w\w)-(\w\w)\W/i))) {
+              // works for earlier version of Android (2.3.x)
+              browserLanguage = androidLanguage[1];
+            } else {
+              // works for iOS, Android 4.x and other devices
+              browserLanguage = $window.navigator.userLanguage || $window.navigator.language;
+            }
+            // only get characters before dash sign
+            if (browserLanguage != null && browserLanguage.indexOf('-') >= 0) {
+              browserLanguage = browserLanguage.substring(0, browserLanguage.indexOf('-'));
+            }
+            return browserLanguage;
+          }
+        };
       }
     ]
   };
@@ -321,14 +320,13 @@ angular.module('i18n', [
   'i18nLocaleContainerProvider',
   'i18nLogUtilProvider',
   function (i18nLocaleContainerProvider, i18nLogUtilProvider) {
-    var pendingQueue = [];
-    var currentLanguage, browserLanguage;
+    var currentLanguage;
     return {
       add: function (language, messageServices) {
-        i18nLocaleContainerProvider.add(language, messageServices);
+        i18nLocaleContainerProvider.add(angular.lowercase(language), messageServices);
       },
       setLanguage: function (language) {
-        currentLanguage = language;
+        currentLanguage = angular.lowercase(language);
       },
       setDebugMode: function (trueOrFalse) {
         i18nLogUtilProvider.setDebugMode(trueOrFalse);
@@ -343,10 +341,10 @@ angular.module('i18n', [
                  * Replace parameters with values.
                  *
                  * @param messageCode
-                 * @param parameters:
+                 * @param parameters
                  *          Object if isAnonymous is null or false.
                  *          Array if isAnonymous is true.
-                 * @param isAnonymous: indicates parameters is object or array.
+                 * @param isAnonymous indicates parameters is object or array.
                  * @returns message is replaced with parameters.
                  */
           function interpolateMessage(messageCode, parameters, isAnonymous) {
@@ -382,40 +380,18 @@ angular.module('i18n', [
             }
             return parts.join('');
           }
-          function addToPendingQueue(messageCode, parameters, isAnonymous, observer, observerAttr) {
-            pendingQueue.push({
-              code: messageCode,
-              params: parameters,
-              isAnonymous: isAnonymous,
-              observer: observer,
-              observerAttr: observerAttr,
-              update: function (parsedMsg) {
-                observer[observerAttr] = parsedMsg;
-              }
-            });
-          }
-          function updatePendingQueue() {
-            for (var i = 0; i < pendingQueue.length; i++) {
-              var p = pendingQueue[i];
-              var result = interpolateMessage(p.code, p.params, p.isAnonymous);
-              p.update(result !== '' ? result : p.code);
-            }
-          }
           function fixLanguage() {
             if (currentLanguage == null || currentLanguage.length < 1) {
-              if (browserLanguage == null || browserLanguage.length < 1) {
-                browserLanguage = i18nLocaleContainer.getBrowserLanguage();
-              }
-              currentLanguage = browserLanguage;
+              currentLanguage = i18nLocaleContainer.getBrowserLanguage();
             }
+            currentLanguage = angular.lowercase(currentLanguage);
           }
-          var i18n = function (messageCode, parameters, observer, observerAttr) {
-            return i18n.translate(messageCode, parameters, false, observer, observerAttr);
+          var i18n = function (messageCode, parameters) {
+            return i18n.translate(messageCode, parameters, false);
           };
           i18n.switchToLanguage = function (language) {
             currentLanguage = language;
             fixLanguage();
-            updatePendingQueue();
             $rootScope.$broadcast(i18nConstants.EVENT_LANGUAGE_CHANGED);
           };
           i18n.getCurrentLanguage = function () {
@@ -427,20 +403,12 @@ angular.module('i18n', [
                  * @param messageCode
                  * @param parameters can be object or array.
                  * @param isAnonymous indicates that parameters are object (pair of name and value) or array.
-                 * @param observer object contains property to watch when switch language.
-                 * @param observerAttr property is updated when switch language.
                  * @returns {*}
                  */
-          i18n.translate = function (messageCode, parameters, isAnonymous, observer, observerAttr) {
+          i18n.translate = function (messageCode, parameters, isAnonymous) {
             fixLanguage();
-            if (observer != null) {
-              addToPendingQueue(messageCode, parameters, isAnonymous, observer, observerAttr);
-              updatePendingQueue();
-            } else {
-              var result = interpolateMessage(messageCode, parameters, isAnonymous);
-              return result !== '' ? result : messageCode;
-            }
-            return '';
+            var result = interpolateMessage(messageCode, parameters, isAnonymous);
+            return result !== '' ? result : messageCode;
           };
           return i18n;
         }

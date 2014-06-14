@@ -18,8 +18,7 @@ angular.module('i18n', [
     'duytran.i18n.logUtil'])
 
     .provider('i18n', function(i18nLocaleContainerProvider, i18nLogUtilProvider) {
-        var pendingQueue = [];
-        var currentLanguage, browserLanguage;
+        var currentLanguage;
 
         return {
 
@@ -31,11 +30,11 @@ angular.module('i18n', [
              * @param messageServices array of message services contain dictionary.
              */
             add: function(language, messageServices) {
-                i18nLocaleContainerProvider.add(language, messageServices);
+                i18nLocaleContainerProvider.add(angular.lowercase(language), messageServices);
             },
 
             setLanguage: function(language) {
-                currentLanguage = language;
+                currentLanguage = angular.lowercase(language);
             },
 
             setDebugMode: function(trueOrFalse) {
@@ -48,10 +47,10 @@ angular.module('i18n', [
                  * Replace parameters with values.
                  *
                  * @param messageCode
-                 * @param parameters:
+                 * @param parameters
                  *          Object if isAnonymous is null or false.
                  *          Array if isAnonymous is true.
-                 * @param isAnonymous: indicates parameters is object or array.
+                 * @param isAnonymous indicates parameters is object or array.
                  * @returns message is replaced with parameters.
                  */
                 function interpolateMessage(messageCode, parameters, isAnonymous) {
@@ -103,44 +102,20 @@ angular.module('i18n', [
                     return parts.join('');
                 }
 
-                function addToPendingQueue(messageCode, parameters, isAnonymous, observer, observerAttr) {
-                    pendingQueue.push({
-                        code: messageCode,
-                        params: parameters,
-                        isAnonymous: isAnonymous,
-                        observer: observer,
-                        observerAttr: observerAttr,
-                        update: function(parsedMsg) {
-                            observer[observerAttr] = parsedMsg;
-                        }
-                    });
-                }
-
-                function updatePendingQueue() {
-                    for(var i=0; i<pendingQueue.length; i++) {
-                        var p = pendingQueue[i];
-                        var result = interpolateMessage(p.code, p.params, p.isAnonymous);
-                        p.update(result !== '' ? result : p.code);
-                    }
-                }
-
                 function fixLanguage() {
                     if(currentLanguage == null || currentLanguage.length < 1) {
-                        if(browserLanguage == null || browserLanguage.length < 1) {
-                            browserLanguage = i18nLocaleContainer.getBrowserLanguage();
-                        }
-                        currentLanguage = browserLanguage;
+                        currentLanguage = i18nLocaleContainer.getBrowserLanguage();
                     }
+                    currentLanguage = angular.lowercase(currentLanguage);
                 }
 
-                var i18n = function(messageCode, parameters, observer, observerAttr) {
-                    return i18n.translate(messageCode, parameters, false, observer, observerAttr);
+                var i18n = function(messageCode, parameters) {
+                    return i18n.translate(messageCode, parameters, false);
                 };
 
                 i18n.switchToLanguage = function(language) {
                     currentLanguage = language;
                     fixLanguage();
-                    updatePendingQueue();
                     $rootScope.$broadcast(i18nConstants.EVENT_LANGUAGE_CHANGED);
                 };
 
@@ -154,22 +129,12 @@ angular.module('i18n', [
                  * @param messageCode
                  * @param parameters can be object or array.
                  * @param isAnonymous indicates that parameters are object (pair of name and value) or array.
-                 * @param observer object contains property to watch when switch language.
-                 * @param observerAttr property is updated when switch language.
                  * @returns {*}
                  */
-                i18n.translate = function(messageCode, parameters, isAnonymous, observer, observerAttr) {
+                i18n.translate = function(messageCode, parameters, isAnonymous) {
                     fixLanguage();
-
-                    if(observer != null) {
-                        addToPendingQueue(messageCode, parameters, isAnonymous, observer, observerAttr);
-                        updatePendingQueue();
-                    } else {
-                        var result = interpolateMessage(messageCode, parameters, isAnonymous);
-                        return result !== '' ? result : messageCode;
-                    }
-
-                    return '';
+                    var result = interpolateMessage(messageCode, parameters, isAnonymous);
+                    return result !== '' ? result : messageCode;
                 };
 
                 return i18n;
