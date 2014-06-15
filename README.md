@@ -44,19 +44,9 @@ Example:
 
 #### With `i18n` directive ####
 ---
-Format: 
+Format:
 
-* Directive as Element:
-
-
-    <i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }"
-        attr="attributeName"></i18n>
-  
-* Directive as Attribute:
-
-
-    <ANY i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }"
-        attr="attributeName"></ANY>
+    <ANY i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }" attr="attributeName"></ANY>
 
 If `attr` attribute presents, element will be added new attribute `attr` and value of new attribute is parsed message.
 
@@ -87,6 +77,8 @@ Declare supported languages: `i18nProvider.add(language, [ messageServices ]);`.
 - If {Array} must be a array of type {string} or {Object}.
 
 
+Example:
+    
     .config(function(i18nProvider, COMMON_VI) {
         // declare two message services for en language
         i18nProvider.add('en', ['common-en', 'm2-en']);
@@ -96,7 +88,7 @@ Declare supported languages: `i18nProvider.add(language, [ messageServices ]);`.
         // can add more message services for vi language in other place
         i18nProvider.add('vi', COMMON_VI);
     });
-
+    
 **Note:** *namespace* of message services **MUST be unique**, otherwise be overridden. **Namespace** of message service is root name.
 
 Example:
