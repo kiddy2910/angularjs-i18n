@@ -5,16 +5,15 @@ module.exports = {
 
     src_files: {
         js: [
-            'lib/i18n.js',
-            'lib/i18n-constants.js',
-            'lib/i18n-locale-container.js',
-            'lib/i18n-log-util.js'
+            'src/service/*.js',
+            'src/directive/*.js',
+            'src/filter/*.js'
         ],
 
         less: []
     },
 
     external_files: {
-        js: [ 'lib/i18n-adapter.js' ]
+        js: [ 'src/i18n-adapter.js' ]
     }
 };

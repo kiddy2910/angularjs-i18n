@@ -286,7 +286,7 @@ module.exports = function (grunt) {
      */
     grunt.registerTask('build', [
         'clean', 'jshint', 'concat:build_src_files_js', 'concat:build_external_files_js',
-        'ngmin', 'concat:add_banner', 'copy:build_src_files_js', 'copy:build_external_files_js'
+        'ngmin', 'copy:build_src_files_js', 'copy:build_external_files_js'
     ]);
 
     /**

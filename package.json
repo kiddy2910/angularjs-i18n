@@ -1,13 +1,11 @@
 {
     "name": "hoiio-i18n",
-    "version": "1.2.0",
+    "version": "2.0.0",
     "repository": {
         "type": "git",
         "url": "https://github.com/kiddy2910/angularjs-i18n.git"
     },
-    "authors": [
-        "kiddy2910 <dangduy2910@gmail.com>"
-    ],
+    "authors": [ "kiddy2910 <dangduy2910@gmail.com>" ],
     "homepage": "https://github.com/kiddy2910/angularjs-i18n.git",
     "dependencies": {},
     "devDependencies": {
