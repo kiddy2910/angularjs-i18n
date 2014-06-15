@@ -7,15 +7,17 @@
  * Localize your message via service.
  * Fire event `i18n:languageChanged` every time language was changed.
  *
- * #### How to use: ####
- * `i18n(code, [params])`
- *
  * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
- * @param {Object=} [params] An data object or array was replaced in message code
+ * @param {Object=} [params] An data object, an array or only value was replaced in message code
+ *
+ * @returns {string} Message was parsed from code and interpolated a values in scope
  *
  * @example
  * ```javascript
- * $scope.msg = i18n('sample.withParameters', { name: 'Duy Tran' });
+ * $scope.msg = i18n('sample.manyParameters', { name: 'Duy Tran', country: data.user.country });
+ * $scope.msg = i18n('sample.manyParameters', [ 'Duy Tran', data.user.country ]);
+ * $scope.msg = i18n('sample.manyParameters', 'Duy Tran');
+ * $scope.msg = i18n('sample.manyParameters', data.user.country);
  * ```
  */
 angular.module('i18n', [
@@ -110,7 +112,15 @@ angular.module('i18n', [
 
                 var i18n = function(messageCode, parameters) {
                     fixLanguage();
-                    var result = interpolateMessage(messageCode, parameters);
+                    var fixedParameters = null;
+                    if( parameters != null ) {
+                        if( angular.isString(parameters) ) {
+                            fixedParameters = [ parameters ];
+                        } else {
+                            fixedParameters = parameters;
+                        }
+                    }
+                    var result = interpolateMessage(messageCode, fixedParameters);
                     return result !== '' ? result : messageCode;
                 };
 

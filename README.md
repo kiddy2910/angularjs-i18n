@@ -113,10 +113,13 @@ Example:
 
 `greetings`, `name1` are *namespaces* of message service.
 
-Basic use:
-
-    var msg = i18n(messageCode, parameters);
+Format: `i18n(messageCode, parameters)`
     
+`parameters` can be in one of formats:
+ - An object: `i18n('sample.manyParameters', { name: 'Duy Tran', country: data.user.country })`
+ - An array of values: `i18n('sample.manyParameters', [ 'Duy Tran', data.user.country ])`
+ - A value: `i18n('sample.manyParameters', 'Duy Tran')` or `i18n('sample.manyParameters', data.user.country)`
+
 Example:
 
     $scope.msg = i18n('greetings.hello', { name: 'Duy Tran', age: 20 });
@@ -156,6 +159,10 @@ Change Logs
  + An object: `params="{ name: 'Duy Tran', country: data.user.country }"`
  + An array of values: `params="[ 'Duy Tran', data.user.country ]"`
  + A value: `params="data.user.name"` or `params=" 'Duy Tran' "`
+- Improve: i18n service accepts one of parameters format (issue [#7](https://github.com/kiddy2910/angularjs-i18n/issues/7)):
+ + An object: `i18n('sample.manyParameters', { name: 'Duy Tran', country: data.user.country })`
+ + An array of values: `i18n('sample.manyParameters', [ 'Duy Tran', data.user.country ])`
+ + A value: `i18n('sample.manyParameters', 'Duy Tran')` or `i18n('sample.manyParameters', data.user.country)`
 
 ### Version 1.2.0 ###
 - Use cache for decreasing message translation time.

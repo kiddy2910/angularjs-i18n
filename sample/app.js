@@ -14,7 +14,7 @@ angular.module('myApp', ['i18n', 'myApp.i18n.en', 'myApp.i18n.vi'])
         };
 
         $scope.$on('i18n:languageChanged', function() {
-            $scope.data.message = i18n('sample.literalString');
+            $scope.data.message = i18n('sample.withParameters', [ $scope.data.user.name ]);
         });
 
         $scope.switchLanguage = function() {
