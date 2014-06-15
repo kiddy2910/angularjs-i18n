@@ -46,7 +46,8 @@ Example:
 ---
 Format:
 
-    <ANY i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }" attr="attributeName"></ANY>
+    <ANY i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }" 
+        attr="attributeName" raw="true"></ANY>
 
 If `attr` attribute presents, element will be added new attribute `attr` and value of new attribute is parsed message.
 
@@ -140,9 +141,9 @@ Example:
 Change Logs
 ===
 ### Version 2.0.0 ###
-- Improve: Remove `observer` and `observerAttr` when invoke `i18n(code, params, observer, observerAttr)`. Listen on event `i18n:languageChanged` instead. Issue #3
-- Improve: Accept case insensitive language when declare the dictionary. Issue #6
-- Improve: `i18nProvider.add` method accepts *name of constant service*, *constant service object* or *array of them*. Issue #1
+- Improve: Remove `observer` and `observerAttr` when invoke `i18n(code, params, observer, observerAttr)`. Listen on event `i18n:languageChanged` instead. Issue [#3](https://github.com/kiddy2910/angularjs-i18n/issues/3)
+- Improve: Accept case insensitive language when declare the dictionary. Issue [#6](https://github.com/kiddy2910/angularjs-i18n/issues/6)
+- Improve: `i18nProvider.add` method accepts *name of constant service*, *constant service object* or *array of them*. Issue [#1](https://github.com/kiddy2910/angularjs-i18n/issues/1)
 - Refactor: Rename `setDebugMode` method to `enableDebugging`
 
 ### Version 1.2.0 ###
