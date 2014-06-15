@@ -26,10 +26,20 @@
     </div>
 
     <div>
+        Declare parameters by enclosing in double bracket <b>{{</b> and <b>}}</b>:
+        <span i18n code="sample.manyParameters" params="[ data.user.name, data.user.country ]"></span>
+    </div>
+
+    <div>
         Refer message from other code by adding the prefix <b>&</b>
-        <span i18n code="sample.referOtherCode" params="{ name: data.user.name }"></span>
+        <span i18n code="sample.referOtherCode" params="'Duy Tran'"></span>
+    </div>
+
+    <div>
+        Counter: <span>{{ 'sample.withParameters' | i18n : data.counter }}</span>
     </div>
 
     <button ng-click="switchLanguage()" type="button">Switch to <span ng-bind="data.lang"></span></button>
+    <button ng-click="count()" type="button">Increase counter</button>
 </body>
 </html>

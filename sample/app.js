@@ -7,8 +7,10 @@ angular.module('myApp', ['i18n', 'myApp.i18n.en', 'myApp.i18n.vi'])
             lang: 'vi',
             message: i18n('sample.literalString'),
             user: {
-                name: 'Duy Tran'
-            }
+                name: 'Duy Tran',
+                country: 'Vietnam'
+            },
+            counter: 1
         };
 
         $scope.$on('i18n:languageChanged', function() {
@@ -18,5 +20,9 @@ angular.module('myApp', ['i18n', 'myApp.i18n.en', 'myApp.i18n.vi'])
         $scope.switchLanguage = function() {
             i18n.switchToLanguage($scope.data.lang);
             $scope.data.lang = $scope.data.lang === 'en' ? 'vi' : 'en';
+        };
+
+        $scope.count = function() {
+            $scope.data.counter++;
         };
     });

@@ -301,7 +301,7 @@ angular.module('duytran.i18n.logUtil', []).provider('$i18nLogUtil', function () 
  * `i18n(code, [params])`
  *
  * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
- * @param {Object=} [params] An data object was replaced in message code
+ * @param {Object=} [params] An data object or array was replaced in message code
  *
  * @example
  * ```javascript
@@ -338,13 +338,11 @@ angular.module('i18n', [
                  * Replace parameters with values.
                  *
                  * @param messageCode
-                 * @param parameters
-                 *          Object if isAnonymous is null or false.
-                 *          Array if isAnonymous is true.
-                 * @param isAnonymous indicates parameters is object or array.
+                 * @param parameters Object or Array
+                 *
                  * @returns message is replaced with parameters.
                  */
-          function interpolateMessage(messageCode, parameters, isAnonymous) {
+          function interpolateMessage(messageCode, parameters) {
             var msg = $i18nDictionary.find(currentLanguage, messageCode);
             var startIndex, endIndex, index = 0, length = msg.length, parts = [], tokenStart = $i18nConstant.PARAMETER_TOKEN.START, tokenEnd = $i18nConstant.PARAMETER_TOKEN.END, tokenStartLength = tokenStart.length, tokenEndLength = tokenEnd.length, paramIndex = 0, paramName = '', paramNameWithToken = '';
             if (parameters == null || parameters.length < 1) {
@@ -357,7 +355,7 @@ angular.module('i18n', [
                 }
                 paramName = msg.substring(startIndex + tokenStartLength, endIndex);
                 paramNameWithToken = tokenStart + paramName + tokenEnd;
-                if (isAnonymous === true) {
+                if (angular.isArray(parameters)) {
                   if (paramIndex >= parameters.length) {
                     parts.push(paramNameWithToken);
                   } else {
@@ -384,7 +382,9 @@ angular.module('i18n', [
             currentLanguage = angular.lowercase(currentLanguage);
           }
           var i18n = function (messageCode, parameters) {
-            return i18n.translate(messageCode, parameters, false);
+            fixLanguage();
+            var result = interpolateMessage(messageCode, parameters);
+            return result !== '' ? result : messageCode;
           };
           i18n.switchToLanguage = function (language) {
             currentLanguage = language;
@@ -393,19 +393,6 @@ angular.module('i18n', [
           };
           i18n.getCurrentLanguage = function () {
             return currentLanguage;
-          };
-          /**
-                 * @deprecated Internal method. Translate message code.
-                 *
-                 * @param messageCode
-                 * @param parameters can be object or array.
-                 * @param isAnonymous indicates that parameters are object (pair of name and value) or array.
-                 * @returns {*}
-                 */
-          i18n.translate = function (messageCode, parameters, isAnonymous) {
-            fixLanguage();
-            var result = interpolateMessage(messageCode, parameters, isAnonymous);
-            return result !== '' ? result : messageCode;
           };
           return i18n;
         }
@@ -423,14 +410,17 @@ angular.module('i18n', [
  * Localize your message via directive
  *
  * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
- * @param {Object=} [params] An data object was replaced in message code
+ * @param {Object=} [params] An object, an array of values or only value
  * @param {string=} [attr] Message was parsed in this (or created if non-exist)
  * @param {string=} [raw] Accept `true | false`, useful in rendering a message which contains HTML tags. Default `false`
  *
  * @example
  * <example>
  *     <tag i18n code="sample.literalString"></tag>
- *     <tag i18n code="sample.withParameters" params="{ name: 'Duy Tran' }"></tag>
+ *     <tag i18n code="sample.withParameters" params="data.user.name"></tag>
+ *     <tag i18n code="sample.withParameters" params=" 'Duy Tran' "></tag>
+ *     <tag i18n code="sample.manyParameters" params="{ name: 'Duy Tran', country: data.user.country }"></tag>
+ *     <tag i18n code="sample.manyParameters" params="[ 'Duy Tran', data.user.country ]"></tag>
  *     <tag i18n code="sample.literalString" attr="placeholder"></tag>
  *     <tag i18n code="sample.literalString" raw="true"></tag>
  * </example>
@@ -444,13 +434,27 @@ angular.module('duytran.i18n.directive', []).directive('i18n', [
       restrict: 'A',
       scope: true,
       compile: function (element, attrs) {
-        var code = attrs.code, params = attrs.params, attr = attrs.attr, raw = attrs.raw;
+        var code = attrs.code, params = attrs.params, attr = attrs.attr, raw = attrs.raw, commaToken = ',', bracketStartToken = '[', parenthesisToken = '{';
         function evaluate(scope) {
-          var parameters = null;
+          var parameters = null, trimmedParamString, partialParams;
           if (params != null) {
-            parameters = $parse(params)(scope);
+            trimmedParamString = trim(params);
+            if (trimmedParamString.indexOf(bracketStartToken) === 0) {
+              // parameters will be an array
+              parameters = [];
+              partialParams = params.replace(/[\[\]]/gm, '').split(commaToken);
+              for (var i = 0; i < partialParams.length; i++) {
+                parameters.push($parse(trim(partialParams[i]))(scope));
+              }
+            } else if (trimmedParamString.indexOf(parenthesisToken) === 0) {
+              // parameters will be an object
+              parameters = $parse(trimmedParamString)(scope);
+            } else {
+              // parameters will be an array
+              parameters = [$parse(trimmedParamString)(scope)];
+            }
           }
-          return i18n.translate(code, parameters);
+          return i18n(code, parameters);
         }
         function render(scope) {
           var msg = evaluate(scope, code, params);
@@ -463,6 +467,9 @@ angular.module('duytran.i18n.directive', []).directive('i18n', [
               element.text(msg);
             }
           }
+        }
+        function trim(str) {
+          return str.replace(/^\s+|\s+$/gm, '');
         }
         return function (scope) {
           render(scope);
@@ -502,7 +509,7 @@ angular.module('duytran.i18n.filter', []).filter('i18n', [
           args.push(arguments[i]);
         }
       }
-      return i18n.translate(input, args, true);
+      return i18n(input, args);
     };
   }
 ]);

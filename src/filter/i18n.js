@@ -25,6 +25,6 @@ angular.module('duytran.i18n.filter', [])
                     args.push(arguments[i]);
                 }
             }
-            return i18n.translate(input, args, true);
+            return i18n(input, args);
         };
     });

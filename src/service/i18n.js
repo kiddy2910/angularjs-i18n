@@ -11,7 +11,7 @@
  * `i18n(code, [params])`
  *
  * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
- * @param {Object=} [params] An data object was replaced in message code
+ * @param {Object=} [params] An data object or array was replaced in message code
  *
  * @example
  * ```javascript
@@ -48,13 +48,11 @@ angular.module('i18n', [
                  * Replace parameters with values.
                  *
                  * @param messageCode
-                 * @param parameters
-                 *          Object if isAnonymous is null or false.
-                 *          Array if isAnonymous is true.
-                 * @param isAnonymous indicates parameters is object or array.
+                 * @param parameters Object or Array
+                 *
                  * @returns message is replaced with parameters.
                  */
-                function interpolateMessage(messageCode, parameters, isAnonymous) {
+                function interpolateMessage(messageCode, parameters) {
                     var msg = $i18nDictionary.find(currentLanguage, messageCode);
                     var startIndex, endIndex, index = 0,
                         length = msg.length, parts = [],
@@ -81,7 +79,7 @@ angular.module('i18n', [
                             paramName = msg.substring(startIndex + tokenStartLength, endIndex);
                             paramNameWithToken = tokenStart + paramName + tokenEnd;
 
-                            if(isAnonymous === true) {
+                            if( angular.isArray(parameters) ) {
                                 if(paramIndex >= parameters.length) {
                                     parts.push(paramNameWithToken);
                                 } else {
@@ -111,7 +109,9 @@ angular.module('i18n', [
                 }
 
                 var i18n = function(messageCode, parameters) {
-                    return i18n.translate(messageCode, parameters, false);
+                    fixLanguage();
+                    var result = interpolateMessage(messageCode, parameters);
+                    return result !== '' ? result : messageCode;
                 };
 
                 i18n.switchToLanguage = function(language) {
@@ -122,20 +122,6 @@ angular.module('i18n', [
 
                 i18n.getCurrentLanguage = function() {
                     return currentLanguage;
-                };
-
-                /**
-                 * @deprecated Internal method. Translate message code.
-                 *
-                 * @param messageCode
-                 * @param parameters can be object or array.
-                 * @param isAnonymous indicates that parameters are object (pair of name and value) or array.
-                 * @returns {*}
-                 */
-                i18n.translate = function(messageCode, parameters, isAnonymous) {
-                    fixLanguage();
-                    var result = interpolateMessage(messageCode, parameters, isAnonymous);
-                    return result !== '' ? result : messageCode;
                 };
 
                 return i18n;

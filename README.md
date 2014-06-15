@@ -46,8 +46,15 @@ Example:
 ---
 Format:
 
-    <ANY i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }" 
-        attr="attributeName" raw="true"></ANY>
+    // parameters as an object
+    <ANY i18n code="code" params="{ name1: value1, name2: 'literalValue' }" attr="attributeName" raw="true"></ANY>
+        
+    // parameters as an array of values
+    <ANY i18n code="code" params="[ value1, 'literalValue' ]" attr="attributeName" raw="true"></ANY>
+        
+    // parameters as a value
+    <ANY i18n code="code" params="value1" attr="attributeName" raw="true"></ANY>
+    <ANY i18n code="code" params=" 'literalValue' " attr="attributeName" raw="true"></ANY>
 
 If `attr` attribute presents, element will be added new attribute `attr` and value of new attribute is parsed message.
 
@@ -141,10 +148,14 @@ Example:
 Change Logs
 ===
 ### Version 2.0.0 ###
-- Improve: Remove `observer` and `observerAttr` when invoke `i18n(code, params, observer, observerAttr)`. Listen on event `i18n:languageChanged` instead. Issue [#3](https://github.com/kiddy2910/angularjs-i18n/issues/3)
+- Refactor: Remove `observer` and `observerAttr` when invoke `i18n(code, params, observer, observerAttr)`. Listen on event `i18n:languageChanged` instead. Issue [#3](https://github.com/kiddy2910/angularjs-i18n/issues/3)
+- Refactor: Rename `setDebugMode` method to `enableDebugging`
 - Improve: Accept case insensitive language when declare the dictionary. Issue [#6](https://github.com/kiddy2910/angularjs-i18n/issues/6)
 - Improve: `i18nProvider.add` method accepts *name of constant service*, *constant service object* or *array of them*. Issue [#1](https://github.com/kiddy2910/angularjs-i18n/issues/1)
-- Refactor: Rename `setDebugMode` method to `enableDebugging`
+- Improve: i18n directive can be in one of formats (issue [#2](https://github.com/kiddy2910/angularjs-i18n/issues/2)):
+ + An object: `params="{ name: 'Duy Tran', country: data.user.country }"`
+ + An array of values: `params="[ 'Duy Tran', data.user.country ]"`
+ + A value: `params="data.user.name"` or `params=" 'Duy Tran' "`
 
 ### Version 1.2.0 ###
 - Use cache for decreasing message translation time.
