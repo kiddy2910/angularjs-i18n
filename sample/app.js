@@ -1,9 +1,7 @@
 angular.module('myApp', ['i18n', 'myApp.i18n.en', 'myApp.i18n.vi'])
     .config(function(i18nProvider) {
-        i18nProvider.add('en', ['SAMPLE_EN']);
-        i18nProvider.add('VI', ['SAMPLE_VI']);
+        i18nProvider.enableDebugging(true);
     })
-
     .controller('MainController', function($scope, i18n) {
         $scope.data = {
             lang: 'vi',

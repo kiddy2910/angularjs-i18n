@@ -1,27 +1,27 @@
 /**
- *  Format:
- *      <i18n code="msgCode" params="{ pn1: pv1, pn2: pv2, ... }" attr="attributeName" raw="true"></i18n>
- *      <ANY i18n code="msgCode" params="{ pn1: pv1, pn2: pv2, ... }" attr="attributeName" raw="false"></ANY>
+ * @ngdoc directive
+ * @name duytran.i18n.directive:i18n
+ * @requires $parse
+ * @restrict A
  *
- *  msgCode: message code in international message files.
- *      Code can include parameters with format: {{name}}.
+ * @description
+ * Localize your message via directive
  *
- *  pn: parameter name.
- *  pv: value of parameter.
- *      If pv in quotes, it's constant.
- *      If pv without quotes, its data got from [scope.$parent] variable of directive.
+ * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
+ * @param {Object=} [params] An data object was replaced in message code
+ * @param {string=} [attr] Message was parsed in this (or created if non-exist)
+ * @param {string=} [raw] Accept `true | false`, useful in rendering a message which contains HTML tags. Default `false`
  *
- *  attributeName: (just only) name of attribute you want to insert into element.
- *
- *  raw: true if message will be rendered as html. Otherwise false (default).
- *
- *  Example:
- *      <h2 i18n code="greetings.hello"></h2>
- *      <h2 i18n code="greetings.hello" params="{name: name, app: 'LOCALIZE'}"></h2>
- *      <input i18n code="greetings.hello" params="{name: name, app: 'LOCALIZE'}" attr="placeholder">
+ * @example
+ * <example>
+ *     <tag i18n code="sample.literalString"></tag>
+ *     <tag i18n code="sample.withParameters" params="{ name: 'Duy Tran' }"></tag>
+ *     <tag i18n code="sample.literalString" attr="placeholder"></tag>
+ *     <tag i18n code="sample.literalString" raw="true"></tag>
+ * </example>
  */
 angular.module('duytran.i18n.directive', [])
-    .directive('i18n', function($parse, i18n, i18nConstants) {
+    .directive('i18n', function($parse, i18n, $i18nConstant) {
         return {
             restrict: 'A',
             scope: true,
@@ -55,7 +55,7 @@ angular.module('duytran.i18n.directive', [])
                 return function(scope) {
                     render(scope);
 
-                    scope.$on(i18nConstants.EVENT_LANGUAGE_CHANGED, function() {
+                    scope.$on($i18nConstant.EVENT_LANGUAGE_CHANGED, function() {
                         render(scope);
                     });
                 };

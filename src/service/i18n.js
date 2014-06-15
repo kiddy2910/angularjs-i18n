@@ -1,47 +1,48 @@
 /**
- * Inject this service to localize application.
+ * @ngdoc service
+ * @name i18n:i18n
+ * @requires $rootScope
  *
- * How to use:
- *  - i18n service is a function, so can call: i18n(code, ...).
- *  - Service [i18n] has available methods: [switchToLanguage], [getCurrentLanguage].
- *  - Provider [i18nProvider] has available methods: [add], [setLanguage].
+ * @description
+ * Localize your message via service.
+ * Fire event `i18n:languageChanged` every time language was changed.
  *
- * To localize app:
- *  - i18n(messageCode, parameters, observer, observerAttribute)
- *  - var msg = i18n(messageCode, parameters)
+ * #### How to use: ####
+ * `i18n(code, [params])`
+ *
+ * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
+ * @param {Object=} [params] An data object was replaced in message code
+ *
+ * @example
+ * ```javascript
+ * $scope.msg = i18n('sample.withParameters', { name: 'Duy Tran' });
+ * ```
  */
 angular.module('i18n', [
     'duytran.i18n.directive',
     'duytran.i18n.filter',
-    'duytran.i18n.constants',
-    'duytran.i18n.localeContainer',
+    'duytran.i18n.constant',
+    'duytran.i18n.dictionary',
     'duytran.i18n.logUtil'])
 
-    .provider('i18n', function(i18nLocaleContainerProvider, i18nLogUtilProvider) {
+    .provider('i18n', function($i18nDictionaryProvider, $i18nLogUtilProvider) {
         var currentLanguage;
 
         return {
 
-            /**
-             * Teach i18n service how to translate message.
-             * Message services add later will have high priority.
-             *
-             * @param language
-             * @param messageServices array of message services contain dictionary.
-             */
             add: function(language, messageServices) {
-                i18nLocaleContainerProvider.add(angular.lowercase(language), messageServices);
+                $i18nDictionaryProvider.add(angular.lowercase(language), messageServices);
             },
 
             setLanguage: function(language) {
                 currentLanguage = angular.lowercase(language);
             },
 
-            setDebugMode: function(trueOrFalse) {
-                i18nLogUtilProvider.setDebugMode(trueOrFalse);
+            enableDebugging: function(debug) {
+                $i18nLogUtilProvider.enableDebugging(debug);
             },
 
-            $get: function($rootScope, $sce, i18nLocaleContainer, i18nConstants) {
+            $get: function($rootScope, $i18nDictionary, $i18nConstant) {
 
                 /**
                  * Replace parameters with values.
@@ -54,11 +55,11 @@ angular.module('i18n', [
                  * @returns message is replaced with parameters.
                  */
                 function interpolateMessage(messageCode, parameters, isAnonymous) {
-                    var msg = i18nLocaleContainer.find(currentLanguage, messageCode);
+                    var msg = $i18nDictionary.find(currentLanguage, messageCode);
                     var startIndex, endIndex, index = 0,
                         length = msg.length, parts = [],
-                        tokenStart = i18nConstants.PARAMETER_TOKEN.START,
-                        tokenEnd = i18nConstants.PARAMETER_TOKEN.END,
+                        tokenStart = $i18nConstant.PARAMETER_TOKEN.START,
+                        tokenEnd = $i18nConstant.PARAMETER_TOKEN.END,
                         tokenStartLength = tokenStart.length,
                         tokenEndLength = tokenEnd.length,
                         paramIndex = 0, paramName = '',
@@ -104,7 +105,7 @@ angular.module('i18n', [
 
                 function fixLanguage() {
                     if(currentLanguage == null || currentLanguage.length < 1) {
-                        currentLanguage = i18nLocaleContainer.getBrowserLanguage();
+                        currentLanguage = $i18nDictionary.getBrowserLanguage();
                     }
                     currentLanguage = angular.lowercase(currentLanguage);
                 }
@@ -116,7 +117,7 @@ angular.module('i18n', [
                 i18n.switchToLanguage = function(language) {
                     currentLanguage = language;
                     fixLanguage();
-                    $rootScope.$broadcast(i18nConstants.EVENT_LANGUAGE_CHANGED);
+                    $rootScope.$broadcast($i18nConstant.EVENT_LANGUAGE_CHANGED);
                 };
 
                 i18n.getCurrentLanguage = function() {

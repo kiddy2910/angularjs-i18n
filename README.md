@@ -31,7 +31,9 @@ Assume message service as:
 
 #### With `i18n` filter ####
 ---
-Format: `{{ 'messageCode' | i18n : mappingParameter : 'literalParameter' : ... : 'pn' }}`
+Format: 
+
+    {{ 'messageCode' | i18n : mappingParameter : 'literalParameter' : ... : 'pn' }}
 
 Example:
 
@@ -45,12 +47,16 @@ Example:
 Format: 
 
 * Directive as Element:
-  `<i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }"
-        attr="attributeName"></i18n>`
+
+
+    <i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }"
+        attr="attributeName"></i18n>
   
 * Directive as Attribute:
-  `<ANY i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }"
-        attr="attributeName"></ANY>`
+
+
+    <ANY i18n code="messageCode" params="{ name1: value1, name2: 'literalValue', ... }"
+        attr="attributeName"></ANY>
 
 If `attr` attribute presents, element will be added new attribute `attr` and value of new attribute is parsed message.
 
@@ -74,16 +80,21 @@ Example:
 1. Declare supported languages and message services in `config` phase of module.
 2. Translate message. That's all.
 
-Declare supported languages: `i18nProvider.add(language, [ messageServices ]);`
+Declare supported languages: `i18nProvider.add(language, [ messageServices ]);`. **messageServices** will be:
 
-    .config(function(i18nProvider) {
+- If {string} it will be injected and get data automatically.
+- If {Object} it was only copy to dictionary of specific language.
+- If {Array} must be a array of type {string} or {Object}.
+
+
+    .config(function(i18nProvider, COMMON_VI) {
         // declare two message services for en language
         i18nProvider.add('en', ['common-en', 'm2-en']);
 
         // declare a message service for vi language
-        i18nProvider.add('vi', ['m1-vi']);
+        i18nProvider.add('vi', 'm1-vi');
         // can add more message services for vi language in other place
-        i18nProvider.add('vi', ['common-vi']);
+        i18nProvider.add('vi', COMMON_VI);
     });
 
 **Note:** *namespace* of message services **MUST be unique**, otherwise be overridden. **Namespace** of message service is root name.
@@ -133,6 +144,18 @@ Example:
     }
 
 `greetings.bonjour` is referred value to `greetings.hello`, then `greetings.bonjour` is **Hello {{name}}, your age is {{age}}**.
+
+Change Logs
+===
+### Version 2.0.0 ###
+- Improve: Remove `observer` and `observerAttr` when invoke `i18n(code, params, observer, observerAttr)`. Listen on event `i18n:languageChanged` instead. Issue #3
+- Improve: Accept case insensitive language when declare the dictionary. Issue #6
+- Improve: `i18nProvider.add` method accepts *name of constant service*, *constant service object* or *array of them*. Issue #1
+- Refactor: Rename `setDebugMode` method to `enableDebugging`
+
+### Version 1.2.0 ###
+- Use cache for decreasing message translation time.
+- Support to render message as HTML with raw="true" attribute in directive.
 
 License
 ===

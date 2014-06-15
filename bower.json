@@ -1,6 +1,6 @@
 {
     "name": "angularjs-i18n",
-    "version": "1.3.0",
+    "version": "2.0.0",
     "description": "i18n service, filter and directive for localizing applications written by AngularJS Framework",
     "keywords": [
         "i18n",

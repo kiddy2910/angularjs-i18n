@@ -1,12 +1,12 @@
 /**
- * hoiio-i18n v1.3.0 (2014-06-14)
+ * hoiio-i18n v2.0.0 (2014-06-15)
  *
  * Author: kiddy2910 <dangduy2910@gmail.com>
  * https://github.com/kiddy2910/angularjs-i18n.git
  *
  * Copyright (c) 2014 
  */
-angular.module('duytran.i18n.constants', []).constant('i18nConstants', {
+angular.module('duytran.i18n.constant', []).constant('$i18nConstant', {
   EVENT_LANGUAGE_CHANGED: 'i18n:languageChanged',
   MESSAGE_CACHE: 'i18n:dictionary',
   REUSE_PARAMETER_TOKEN: '&',
@@ -15,245 +15,235 @@ angular.module('duytran.i18n.constants', []).constant('i18nConstants', {
     END: '}}'
   }
 });
-/**
- * Format:
- *
- *  i18nLocaleContainer = [
- *  {
- *      language: 'en',
- *      requires: [
- *          {name: 'en-1', provider: angular.injector([modules.name]).get(requires.name)},
- *          {name: 'en-2', provider: angular.injector([modules.name]).get(requires.name)}
- *      ]
- *  }, {
- *      language: 'vi',
- *      requires: [
- *          {name: 'vi-1', provider: angular.injector([modules.name]).get(requires.name)},
- *          {name: 'vi-2', provider: angular.injector([modules.name]).get(requires.name)}
- *      ]
- *  }]
- *
- * @type {Array}
- */
-angular.module('duytran.i18n.localeContainer', []).provider('i18nLocaleContainer', function () {
-  var i18nLocaleContainer = [];
-  function getLocaleByLanguage(language) {
-    for (var i = 0; i < i18nLocaleContainer.length; i++) {
-      if (i18nLocaleContainer[i].language === language) {
-        return i18nLocaleContainer[i];
+angular.module('duytran.i18n.dictionary', []).provider('$i18nDictionary', [
+  '$i18nConstant',
+  function ($i18nConstant) {
+    var dictionaries = [], lazyRequires = [];
+    function getDictionaryByLanguage(language) {
+      for (var i = 0; i < dictionaries.length; i++) {
+        if (dictionaries[i].language === language) {
+          return dictionaries[i];
+        }
+      }
+      return null;
+    }
+    function getMessageByLanguageAndCode(language, namespaceOfMessageCode) {
+      var dictionary = getDictionaryByLanguage(language);
+      if (dictionary == null) {
+        throw 'No data for language [' + language + ']';
+      }
+      return dictionary.data[namespaceOfMessageCode];
+    }
+    /**
+         * @ngdoc function
+         * @name duytran.i18n.dictionary.$i18nDictionary#extractMessageCode
+         * @methodOf duytran.i18n.dictionary.$i18nDictionary
+         *
+         * @description
+         * Get message string by language and message code.
+         * To interpolate parameters, enclose by double bracket `{{ name }}`.
+         * To refer other message, add the prefix {@link $i18nConstant.REUSE_PARAMETER_TOKEN} `&code`.
+         *
+         * @param language
+         * @param messageCode
+         * @returns {string} Message was parsed from code or code if it doesn't exist.
+         */
+    function extractMessageCode(language, messageCode) {
+      var dotToken = '.', message = null, namespaces = messageCode.split(dotToken);
+      if (namespaces.length > 0) {
+        message = getMessageByLanguageAndCode(language, namespaces[0]);
+        if (message == null) {
+          return messageCode;
+        }
+      }
+      for (var i = 1; i < namespaces.length; i++) {
+        message = message[namespaces[i]];
+        if (message == null) {
+          return messageCode;
+        }
+      }
+      if (angular.isObject(message)) {
+        return messageCode;
+      } else {
+        return extractReference(language, message);
       }
     }
-    return null;
-  }
-  function getOrInitLocale(language) {
-    var locale = getLocaleByLanguage(language);
-    if (locale == null) {
-      locale = {
-        language: language,
-        requires: []
-      };
-      i18nLocaleContainer.push(locale);
-    }
-    return locale;
-  }
-  function getRequireByName(locale, requireName) {
-    for (var i = 0; i < locale.requires.length; i++) {
-      if (locale.requires[i].name === requireName) {
-        return locale.requires[i];
+    /**
+         * @ngdoc function
+         * @name duytran.i18n.dictionary.$i18nDictionary#extractMessageCode
+         * @methodOf duytran.i18n.dictionary.$i18nDictionary
+         *
+         * @description
+         * Get message by referring to other message by {@link $i18nConstant.REUSE_PARAMETER_TOKEN} sign.
+         *
+         * @param language
+         * @param message
+         * @returns {string} Message was parsed from code or code if it doesn't exist
+         */
+    function extractReference(language, message) {
+      var referToken = $i18nConstant.REUSE_PARAMETER_TOKEN, spaceToken = ' ';
+      var referIndex, spaceIndex, index = 0, length = message.length;
+      var parts = [], part, temp;
+      var counterForBreakingLoop = 0;
+      // split by reference token and space token
+      while (index < length) {
+        if ((referIndex = message.indexOf(referToken, index)) >= 0) {
+          // part without reference
+          if (referIndex !== index) {
+            parts.push(message.substring(index, referIndex));
+          }
+          // part from reference position to space
+          if ((spaceIndex = message.indexOf(spaceToken, referIndex)) >= 0) {
+            parts.push(message.substring(referIndex, spaceIndex));
+            index = spaceIndex;
+          } else {
+            // without any space, add remain string
+            parts.push(message.substring(referIndex));
+            index = length;
+          }
+        } else {
+          // string without any reference token
+          if (index !== length) {
+            parts.push(message.substring(index));
+          }
+          index = length;
+        }
+        // for breaking loop if loop is infinite
+        if (counterForBreakingLoop > length) {
+          throw 'Message Code [' + message + '] refers infinitely.';
+        }
+        counterForBreakingLoop++;
       }
+      // refer to other message object if parts has reference token
+      for (var i = 0; i < parts.length; i++) {
+        part = parts[i];
+        // if part start with reference token and not only (&) sign
+        if (part.indexOf(referToken) === 0 && part.length > 1) {
+          part = part.replace(referToken, '');
+          // refer to other message
+          temp = extractMessageCode(language, part);
+          // if refer failed, output message code
+          parts[i] = temp === part ? referToken + temp : temp;
+        }
+      }
+      return parts.join('');
     }
-    return null;
-  }
-  function initRequire(requireName) {
     return {
-      name: requireName,
-      provider: null
+      add: function (language, constantsOrRequires) {
+        var lazy;
+        for (var i = 0; i < lazyRequires.length; i++) {
+          if (lazyRequires[i].language === language) {
+            lazy = lazyRequires[i];
+            break;
+          }
+        }
+        if (lazy == null) {
+          lazy = {
+            language: language,
+            requires: []
+          };
+          lazyRequires.push(lazy);
+        }
+        if (angular.isArray(constantsOrRequires)) {
+          angular.forEach(constantsOrRequires, function (p) {
+            lazy.requires.push(p);
+          });
+        } else if (angular.isObject(constantsOrRequires)) {
+          lazy.requires.push(constantsOrRequires);
+        } else {
+          throw 'i18n only accepts a constant service or array of constant services.';
+        }
+      },
+      $get: [
+        '$window',
+        '$injector',
+        '$cacheFactory',
+        '$i18nLogUtil',
+        function ($window, $injector, $cacheFactory, $i18nLogUtil) {
+          /**
+                 * @ngdoc function
+                 * @name duytran.i18n.dictionary.$i18nDictionary#initLazyRequires
+                 * @methodOf duytran.i18n.dictionary.$i18nDictionary
+                 *
+                 * @description
+                 * Read data of requires were passed into dictionary of specific language
+                 */
+          (function initLazyRequires() {
+            var lazy, dictionary, require;
+            for (var i = 0; i < lazyRequires.length; i++) {
+              lazy = lazyRequires[i];
+              dictionary = {
+                language: lazy.language,
+                data: {}
+              };
+              dictionaries.push(dictionary);
+              for (var k = 0; k < lazy.requires.length; k++) {
+                require = lazy.requires[k];
+                if (angular.isString(require)) {
+                  angular.extend(dictionary.data, injectRequire(require));
+                } else if (angular.isObject(require)) {
+                  angular.extend(dictionary.data, require);
+                } else {
+                  $i18nLogUtil.error('Require [' + require + '] must be an Object or name of constant service');
+                }
+              }
+            }
+            lazyRequires.splice(0, lazyRequires.length);
+          }());
+          function injectRequire(require) {
+            if ($injector.has(require)) {
+              return $injector.get(require);
+            }
+            throw 'Require [' + require + '] doesn\'t exist.';
+          }
+          function getMessageFromCache(language, messageCode) {
+            var cache = $cacheFactory.get($i18nConstant.MESSAGE_CACHE + ':' + language);
+            return cache == null ? null : cache.get(messageCode);
+          }
+          function addToCache(language, messageCode, message) {
+            var cache = $cacheFactory.get($i18nConstant.MESSAGE_CACHE + ':' + language);
+            if (cache == null) {
+              cache = $cacheFactory($i18nConstant.MESSAGE_CACHE + ':' + language);
+            }
+            cache.put(messageCode, message);
+          }
+          return {
+            find: function (language, messageCode) {
+              $i18nLogUtil.debug('Get cache$' + language + '#' + messageCode);
+              var msg = getMessageFromCache(language, messageCode);
+              if (msg == null) {
+                $i18nLogUtil.debug('-- Cannot found cache$' + language + '#' + messageCode);
+                msg = extractMessageCode(language, messageCode);
+                if (msg !== messageCode) {
+                  // have matched message, set cache
+                  $i18nLogUtil.debug('---- Add to cache$' + language + '#' + messageCode + ' with value#' + msg);
+                  addToCache(language, messageCode, msg);
+                }
+              }
+              return msg;
+            },
+            getBrowserLanguage: function () {
+              var browserLanguage, androidLanguage;
+              if ($window.navigator && $window.navigator.userAgent && (androidLanguage = $window.navigator.userAgent.match(/android.*\W(\w\w)-(\w\w)\W/i))) {
+                // works for earlier version of Android (2.3.x)
+                browserLanguage = androidLanguage[1];
+              } else {
+                // works for iOS, Android 4.x and other devices
+                browserLanguage = $window.navigator.userLanguage || $window.navigator.language;
+              }
+              // only get characters before dash sign
+              if (browserLanguage != null && browserLanguage.indexOf('-') >= 0) {
+                browserLanguage = browserLanguage.substring(0, browserLanguage.indexOf('-'));
+              }
+              return browserLanguage;
+            }
+          };
+        }
+      ]
     };
   }
-  return {
-    add: function (language, requires) {
-      var locale, require;
-      locale = getOrInitLocale(language);
-      for (var i = 0; i < requires.length; i++) {
-        require = getRequireByName(locale, requires[i]);
-        // not exist
-        if (require == null) {
-          require = initRequire(requires[i]);
-          locale.requires.push(require);
-        }
-      }
-    },
-    $get: [
-      '$window',
-      '$injector',
-      '$cacheFactory',
-      'i18nLogUtil',
-      'i18nConstants',
-      function ($window, $injector, $cacheFactory, i18nLogUtil, i18nConstants) {
-        function initMessageProvider(requireName) {
-          if ($injector.has(requireName)) {
-            return $injector.get(requireName);
-          }
-          throw 'Require [' + requireName + '] doesn\'t exist.';
-        }
-        /**
-                 * Get message object in message services. Priority for require last added.
-                 *
-                 * @param language
-                 * @param messageNamespace name of message object
-                 * @returns message object or null.
-                 */
-        function getMessageObject(language, messageNamespace) {
-          var locale, iterationRequire, message, i;
-          locale = getLocaleByLanguage(language);
-          if (locale == null) {
-            throw 'There is no locale [' + language + ']. Please declare before to use.';
-          }
-          // iterates message services
-          for (i = locale.requires.length - 1; i >= 0; i--) {
-            iterationRequire = locale.requires[i];
-            if (iterationRequire.provider == null) {
-              iterationRequire.provider = initMessageProvider(iterationRequire.name);
-            }
-            message = iterationRequire.provider[messageNamespace];
-            if (message != null) {
-              return message;
-            }
-          }
-          return null;
-        }
-        /**
-                 * Get message string by language and message code.
-                 * Support to reuse parameter by {@link REUSE_PARAMETER_TOKEN} sign.
-                 *
-                 * @param language
-                 * @param messageCode message code need to find.
-                 * @returns message string or message code if not exist or not string.
-                 */
-        function extractMessageCode(language, messageCode) {
-          var dotToken = '.', message = null, namespaces = messageCode.split(dotToken);
-          for (var i = 0; i < namespaces.length; i++) {
-            if (i === 0) {
-              // get message object from the first namespace
-              message = getMessageObject(language, namespaces[0]);
-            } else {
-              // refer to children properties of message object
-              message = message[namespaces[i]];
-            }
-            if (message == null) {
-              return messageCode;
-            }
-          }
-          if (message instanceof Object) {
-            return messageCode;
-          } else {
-            return extractReference(language, message);
-          }
-        }
-        /**
-                 * Get message by referring to other message by {@link REUSE_PARAMETER_TOKEN} sign.
-                 *
-                 * @param language
-                 * @param message
-                 * @returns message
-                 */
-        function extractReference(language, message) {
-          var referToken = i18nConstants.REUSE_PARAMETER_TOKEN, spaceToken = ' ';
-          var referIndex, spaceIndex, index = 0, length = message.length;
-          var parts = [], part, temp;
-          var counterForBreakingLoop = 0;
-          // split by reference token and space token
-          while (index < length) {
-            if ((referIndex = message.indexOf(referToken, index)) >= 0) {
-              // part without reference
-              if (referIndex !== index) {
-                parts.push(message.substring(index, referIndex));
-              }
-              // part from reference position to space
-              if ((spaceIndex = message.indexOf(spaceToken, referIndex)) >= 0) {
-                parts.push(message.substring(referIndex, spaceIndex));
-                index = spaceIndex;
-              } else {
-                // without any space, add remain string
-                parts.push(message.substring(referIndex));
-                index = length;
-              }
-            } else {
-              // string without any reference token
-              if (index !== length) {
-                parts.push(message.substring(index));
-              }
-              index = length;
-            }
-            // for breaking loop if loop is infinite
-            if (counterForBreakingLoop > length) {
-              throw 'Message Code [' + message + '] refers infinitely.';
-            }
-            counterForBreakingLoop++;
-          }
-          // refer to other message object if parts has reference token
-          for (var i = 0; i < parts.length; i++) {
-            part = parts[i];
-            // if part start with reference token and not only (&) sign
-            if (part.indexOf(referToken) === 0 && part.length > 1) {
-              part = part.replace(referToken, '');
-              // refer to other message
-              temp = extractMessageCode(language, part);
-              // if refer failed, output message code
-              parts[i] = temp === part ? referToken + temp : temp;
-            }
-          }
-          // join parts
-          return parts.join('');
-        }
-        function getMessageFromCache(language, messageCode) {
-          var cache = $cacheFactory.get(i18nConstants.MESSAGE_CACHE + language);
-          return cache == null ? null : cache.get(messageCode);
-        }
-        function storeInCache(language, messageCode, message) {
-          var cache = $cacheFactory.get(i18nConstants.MESSAGE_CACHE + language);
-          if (cache == null) {
-            // initialize cache
-            cache = $cacheFactory(i18nConstants.MESSAGE_CACHE + language);
-          }
-          cache.put(messageCode, message);
-        }
-        return {
-          find: function (language, messageCode) {
-            i18nLogUtil.debug('Get cache$' + language + '#' + messageCode);
-            var msg = getMessageFromCache(language, messageCode);
-            if (msg == null) {
-              i18nLogUtil.debug('-- Cannot found cache$' + language + '#' + messageCode);
-              msg = extractMessageCode(language, messageCode);
-              if (msg !== messageCode) {
-                // have matched message, set cache
-                i18nLogUtil.debug('---- Store cache$' + language + '#' + messageCode + ' with value#' + msg);
-                storeInCache(language, messageCode, msg);
-              }
-            }
-            return msg;
-          },
-          getBrowserLanguage: function () {
-            var browserLanguage, androidLanguage;
-            if ($window.navigator && $window.navigator.userAgent && (androidLanguage = $window.navigator.userAgent.match(/android.*\W(\w\w)-(\w\w)\W/i))) {
-              // works for earlier version of Android (2.3.x)
-              browserLanguage = androidLanguage[1];
-            } else {
-              // works for iOS, Android 4.x and other devices
-              browserLanguage = $window.navigator.userLanguage || $window.navigator.language;
-            }
-            // only get characters before dash sign
-            if (browserLanguage != null && browserLanguage.indexOf('-') >= 0) {
-              browserLanguage = browserLanguage.substring(0, browserLanguage.indexOf('-'));
-            }
-            return browserLanguage;
-          }
-        };
-      }
-    ]
-  };
-});
-angular.module('duytran.i18n.logUtil', []).provider('i18nLogUtil', function () {
+]);
+angular.module('duytran.i18n.logUtil', []).provider('$i18nLogUtil', function () {
   var isDebug = false;
   var mode = {
       DEBUG: 'DEBUG',
@@ -261,7 +251,7 @@ angular.module('duytran.i18n.logUtil', []).provider('i18nLogUtil', function () {
       WARNING: 'WARNING'
     };
   return {
-    setDebugMode: function (enableDebugging) {
+    enableDebugging: function (enableDebugging) {
       isDebug = enableDebugging === true;
     },
     $get: [
@@ -299,44 +289,51 @@ angular.module('duytran.i18n.logUtil', []).provider('i18nLogUtil', function () {
   };
 });
 /**
- * Inject this service to localize application.
+ * @ngdoc service
+ * @name i18n:i18n
+ * @requires $rootScope
  *
- * How to use:
- *  - i18n service is a function, so can call: i18n(code, ...).
- *  - Service [i18n] has available methods: [switchToLanguage], [getCurrentLanguage].
- *  - Provider [i18nProvider] has available methods: [add], [setLanguage].
+ * @description
+ * Localize your message via service.
+ * Fire event `i18n:languageChanged` every time language was changed.
  *
- * To localize app:
- *  - i18n(messageCode, parameters, observer, observerAttribute)
- *  - var msg = i18n(messageCode, parameters)
+ * #### How to use: ####
+ * `i18n(code, [params])`
+ *
+ * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
+ * @param {Object=} [params] An data object was replaced in message code
+ *
+ * @example
+ * ```javascript
+ * $scope.msg = i18n('sample.withParameters', { name: 'Duy Tran' });
+ * ```
  */
 angular.module('i18n', [
   'duytran.i18n.directive',
   'duytran.i18n.filter',
-  'duytran.i18n.constants',
-  'duytran.i18n.localeContainer',
+  'duytran.i18n.constant',
+  'duytran.i18n.dictionary',
   'duytran.i18n.logUtil'
 ]).provider('i18n', [
-  'i18nLocaleContainerProvider',
-  'i18nLogUtilProvider',
-  function (i18nLocaleContainerProvider, i18nLogUtilProvider) {
+  '$i18nDictionaryProvider',
+  '$i18nLogUtilProvider',
+  function ($i18nDictionaryProvider, $i18nLogUtilProvider) {
     var currentLanguage;
     return {
       add: function (language, messageServices) {
-        i18nLocaleContainerProvider.add(angular.lowercase(language), messageServices);
+        $i18nDictionaryProvider.add(angular.lowercase(language), messageServices);
       },
       setLanguage: function (language) {
         currentLanguage = angular.lowercase(language);
       },
-      setDebugMode: function (trueOrFalse) {
-        i18nLogUtilProvider.setDebugMode(trueOrFalse);
+      enableDebugging: function (debug) {
+        $i18nLogUtilProvider.enableDebugging(debug);
       },
       $get: [
         '$rootScope',
-        '$sce',
-        'i18nLocaleContainer',
-        'i18nConstants',
-        function ($rootScope, $sce, i18nLocaleContainer, i18nConstants) {
+        '$i18nDictionary',
+        '$i18nConstant',
+        function ($rootScope, $i18nDictionary, $i18nConstant) {
           /**
                  * Replace parameters with values.
                  *
@@ -348,8 +345,8 @@ angular.module('i18n', [
                  * @returns message is replaced with parameters.
                  */
           function interpolateMessage(messageCode, parameters, isAnonymous) {
-            var msg = i18nLocaleContainer.find(currentLanguage, messageCode);
-            var startIndex, endIndex, index = 0, length = msg.length, parts = [], tokenStart = i18nConstants.PARAMETER_TOKEN.START, tokenEnd = i18nConstants.PARAMETER_TOKEN.END, tokenStartLength = tokenStart.length, tokenEndLength = tokenEnd.length, paramIndex = 0, paramName = '', paramNameWithToken = '';
+            var msg = $i18nDictionary.find(currentLanguage, messageCode);
+            var startIndex, endIndex, index = 0, length = msg.length, parts = [], tokenStart = $i18nConstant.PARAMETER_TOKEN.START, tokenEnd = $i18nConstant.PARAMETER_TOKEN.END, tokenStartLength = tokenStart.length, tokenEndLength = tokenEnd.length, paramIndex = 0, paramName = '', paramNameWithToken = '';
             if (parameters == null || parameters.length < 1) {
               return msg;
             }
@@ -382,7 +379,7 @@ angular.module('i18n', [
           }
           function fixLanguage() {
             if (currentLanguage == null || currentLanguage.length < 1) {
-              currentLanguage = i18nLocaleContainer.getBrowserLanguage();
+              currentLanguage = $i18nDictionary.getBrowserLanguage();
             }
             currentLanguage = angular.lowercase(currentLanguage);
           }
@@ -392,7 +389,7 @@ angular.module('i18n', [
           i18n.switchToLanguage = function (language) {
             currentLanguage = language;
             fixLanguage();
-            $rootScope.$broadcast(i18nConstants.EVENT_LANGUAGE_CHANGED);
+            $rootScope.$broadcast($i18nConstant.EVENT_LANGUAGE_CHANGED);
           };
           i18n.getCurrentLanguage = function () {
             return currentLanguage;
@@ -417,32 +414,32 @@ angular.module('i18n', [
   }
 ]);
 /**
- *  Format:
- *      <i18n code="msgCode" params="{ pn1: pv1, pn2: pv2, ... }" attr="attributeName" raw="true"></i18n>
- *      <ANY i18n code="msgCode" params="{ pn1: pv1, pn2: pv2, ... }" attr="attributeName" raw="false"></ANY>
+ * @ngdoc directive
+ * @name duytran.i18n.directive:i18n
+ * @requires $parse
+ * @restrict A
  *
- *  msgCode: message code in international message files.
- *      Code can include parameters with format: {{name}}.
+ * @description
+ * Localize your message via directive
  *
- *  pn: parameter name.
- *  pv: value of parameter.
- *      If pv in quotes, it's constant.
- *      If pv without quotes, its data got from [scope.$parent] variable of directive.
+ * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
+ * @param {Object=} [params] An data object was replaced in message code
+ * @param {string=} [attr] Message was parsed in this (or created if non-exist)
+ * @param {string=} [raw] Accept `true | false`, useful in rendering a message which contains HTML tags. Default `false`
  *
- *  attributeName: (just only) name of attribute you want to insert into element.
- *
- *  raw: true if message will be rendered as html. Otherwise false (default).
- *
- *  Example:
- *      <h2 i18n code="greetings.hello"></h2>
- *      <h2 i18n code="greetings.hello" params="{name: name, app: 'LOCALIZE'}"></h2>
- *      <input i18n code="greetings.hello" params="{name: name, app: 'LOCALIZE'}" attr="placeholder">
+ * @example
+ * <example>
+ *     <tag i18n code="sample.literalString"></tag>
+ *     <tag i18n code="sample.withParameters" params="{ name: 'Duy Tran' }"></tag>
+ *     <tag i18n code="sample.literalString" attr="placeholder"></tag>
+ *     <tag i18n code="sample.literalString" raw="true"></tag>
+ * </example>
  */
 angular.module('duytran.i18n.directive', []).directive('i18n', [
   '$parse',
   'i18n',
-  'i18nConstants',
-  function ($parse, i18n, i18nConstants) {
+  '$i18nConstant',
+  function ($parse, i18n, $i18nConstant) {
     return {
       restrict: 'A',
       scope: true,
@@ -469,7 +466,7 @@ angular.module('duytran.i18n.directive', []).directive('i18n', [
         }
         return function (scope) {
           render(scope);
-          scope.$on(i18nConstants.EVENT_LANGUAGE_CHANGED, function () {
+          scope.$on($i18nConstant.EVENT_LANGUAGE_CHANGED, function () {
             render(scope);
           });
         };
@@ -478,18 +475,22 @@ angular.module('duytran.i18n.directive', []).directive('i18n', [
   }
 ]);
 /**
- * Format: {{ 'code' | i18n: p1: 'p2': ...: 'pn' }}
+ * @ngdoc filter
+ * @name duytran.i18n.filter:i18n
  *
- *  code: message code in international message files.
- *      Code must be wrapped in single or double quotes.
- *      Code can include parameters with format: {{name}}.
+ * @description
+ * Localize your message via filter
  *
- *  pn: parameters in code.
- *      If pn in quotes, it's constant.
- *      If pn without quotes, its data got from [scope] variable of directive.
+ * ### Use in HTML format ###
+ * **{{ 'code' | i18n [: param1 : 'param2' : ...] }}**
  *
- *  Example:
- *      <input placeholder="{{ 'greetings.hello' | i18n: name: 'LOCALIZE' }}">
+ * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
+ * @param {*=} [params] An data object was replaced in message code by order
+ *
+ * @example
+ * <example>
+ *     <tag>{{ 'sample.withParameters' | i18n : data.user.name }}</tag>
+ * </example>
  */
 angular.module('duytran.i18n.filter', []).filter('i18n', [
   'i18n',

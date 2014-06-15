@@ -1,5 +1,5 @@
 angular.module('duytran.i18n.logUtil', [])
-    .provider('i18nLogUtil', function() {
+    .provider('$i18nLogUtil', function() {
         var isDebug = false;
         var mode = {
             DEBUG: 'DEBUG',
@@ -8,7 +8,7 @@ angular.module('duytran.i18n.logUtil', [])
         };
 
         return {
-            setDebugMode: function(enableDebugging) {
+            enableDebugging: function(enableDebugging) {
                 isDebug = enableDebugging === true;
             },
 

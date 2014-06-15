@@ -1,16 +1,20 @@
 /**
- * Format: {{ 'code' | i18n: p1: 'p2': ...: 'pn' }}
+ * @ngdoc filter
+ * @name duytran.i18n.filter:i18n
  *
- *  code: message code in international message files.
- *      Code must be wrapped in single or double quotes.
- *      Code can include parameters with format: {{name}}.
+ * @description
+ * Localize your message via filter
  *
- *  pn: parameters in code.
- *      If pn in quotes, it's constant.
- *      If pn without quotes, its data got from [scope] variable of directive.
+ * ### Use in HTML format ###
+ * **{{ 'code' | i18n [: param1 : 'param2' : ...] }}**
  *
- *  Example:
- *      <input placeholder="{{ 'greetings.hello' | i18n: name: 'LOCALIZE' }}">
+ * @param {string=} code A message code need to be parse. A parameter is enclosing by double bracket `{{ name }}`. Refer an other message by adding the prefix `&`
+ * @param {*=} [params] An data object was replaced in message code by order
+ *
+ * @example
+ * <example>
+ *     <tag>{{ 'sample.withParameters' | i18n : data.user.name }}</tag>
+ * </example>
  */
 angular.module('duytran.i18n.filter', [])
     .filter('i18n', function(i18n) {
